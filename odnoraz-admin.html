@@ -108,6 +108,7 @@
             transform: scale(0.95);
         }
         
+        /* Сетка товаров в админке */
         .products-grid {
             display: grid;
             grid-template-columns: 1fr;
@@ -115,6 +116,7 @@
             margin-bottom: 20px;
         }
         
+        /* Карточка товара в админке */
         .product-card {
             background: rgba(255, 255, 255, 0.05);
             border-radius: 22px;
@@ -157,6 +159,7 @@
             transform: scale(1.1);
         }
         
+        /* Изображение */
         .product-image {
             width: 100%;
             height: 100px;
@@ -213,10 +216,18 @@
             border: 1px solid rgba(255, 255, 255, 0.05);
         }
         
-        .flavor-name {
+        .flavor-info {
             flex: 1;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            flex-wrap: wrap;
+        }
+        
+        .flavor-name {
             color: white;
             font-size: 0.9em;
+            min-width: 80px;
         }
         
         .flavor-status {
@@ -224,6 +235,7 @@
             height: 8px;
             border-radius: 50%;
             display: inline-block;
+            margin-left: auto;
         }
         
         .product-price {
@@ -257,6 +269,7 @@
             transform: scale(0.96);
         }
         
+        /* Кнопка добавления */
         .add-product-btn {
             width: 100%;
             min-height: 120px;
@@ -284,6 +297,7 @@
             font-size: 0.2em;
         }
         
+        /* МОДАЛЬНОЕ ОКНО */
         .modal {
             display: none;
             position: fixed;
@@ -347,11 +361,40 @@
             transform: scale(1.1);
         }
         
+        /* Поля ввода в модальном окне */
         .modal .product-image {
-            height: 120px;
-            margin-bottom: 20px;
+            width: 100%;
+            height: 150px;
             background: rgba(255, 255, 255, 0.05);
             border: 2px dashed rgba(255, 215, 0, 0.3);
+            border-radius: 15px;
+            margin-bottom: 20px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            overflow: hidden;
+            transition: all 0.3s ease;
+        }
+        
+        .modal .product-image:hover {
+            border-color: #ffd700;
+            background: rgba(255, 215, 0, 0.1);
+        }
+        
+        .modal .product-image img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+        
+        .image-placeholder {
+            width: 100%;
+            height: 100%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: rgba(255, 255, 255, 0.5);
         }
         
         .modal .name-input,
@@ -374,6 +417,7 @@
             background: rgba(255, 255, 255, 0.08);
         }
         
+        /* Список вкусов в модальном окне */
         .modal .flavors-section {
             margin-bottom: 20px;
         }
@@ -391,17 +435,23 @@
         
         .modal .flavor-item {
             background: rgba(255, 255, 255, 0.05);
-            padding: 8px 12px;
+            padding: 12px;
             border-radius: 16px;
             border: 1px solid rgba(255, 255, 255, 0.1);
-            display: flex;
-            align-items: center;
-            gap: 10px;
         }
         
-        .modal .flavor-item input[type="text"] {
-            flex: 1;
-            padding: 12px;
+        .flavor-row {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            width: 100%;
+            flex-wrap: wrap;
+        }
+        
+        .flavor-row input[type="text"] {
+            flex: 2;
+            min-width: 120px;
+            padding: 10px;
             background: rgba(255, 255, 255, 0.05);
             border: 1px solid rgba(255, 255, 255, 0.1);
             border-radius: 12px;
@@ -410,19 +460,14 @@
             -webkit-appearance: none;
         }
         
-        .modal .flavor-item input[type="text"]:focus {
-            outline: none;
-            border-color: #ffd700;
-        }
-        
-        .modal .flavor-item input[type="checkbox"] {
+        .flavor-row input[type="checkbox"] {
             width: 24px;
             height: 24px;
             accent-color: #4ade80;
             transform: scale(1.1);
         }
         
-        .modal .flavor-item .remove-flavor {
+        .flavor-row .remove-flavor {
             font-size: 1.4em;
             padding: 5px 10px;
             color: rgba(255, 107, 107, 0.7);
@@ -468,6 +513,7 @@
             opacity: 0.9;
         }
         
+        /* Плавающие частицы */
         .particle {
             position: fixed;
             width: 4px;
@@ -484,6 +530,16 @@
             0%, 100% { transform: translateY(0) translateX(0); }
             50% { transform: translateY(-30px) translateX(20px); }
         }
+        
+        @media (max-width: 480px) {
+            .flavor-row {
+                gap: 5px;
+            }
+            
+            .flavor-row input[type="text"] {
+                min-width: 100px;
+            }
+        }
     </style>
 </head>
 <body>
@@ -497,27 +553,35 @@
             <a href="admin-panel.html" class="back-button">← Назад</a>
         </div>
         
-        <div id="productsGrid" class="products-grid"></div>
+        <div id="productsGrid" class="products-grid">
+            <!-- Карточки товаров будут загружаться сюда -->
+        </div>
         
         <div class="add-product-btn" onclick="openAddModal()">
             +
-            <span>Добавить товар</span>
+            <span>Добавить одноразку</span>
         </div>
     </div>
     
+    <!-- МОДАЛЬНОЕ ОКНО -->
     <div id="productModal" class="modal">
         <div class="modal-content">
             <div class="modal-header">
-                <h2 id="modalTitle">➕ Новый товар</h2>
+                <h2 id="modalTitle">➕ Новая одноразка</h2>
                 <span class="close-modal" onclick="closeModal()">✕</span>
             </div>
             
             <div class="product-image" onclick="selectImage()" id="modalImage">
-                <div class="image-placeholder" id="imagePlaceholder">📷</div>
-                <img id="imagePreview" style="display: none;">
+                <div class="image-placeholder" id="imagePlaceholder">
+                    <div style="text-align: center;">
+                        <div style="font-size: 2em;">📷</div>
+                        <div style="font-size: 0.8em; margin-top: 5px;">Нажмите для выбора фото</div>
+                    </div>
+                </div>
+                <img id="imagePreview" style="display: none; width: 100%; height: 100%; object-fit: cover;">
             </div>
             
-            <input type="text" class="name-input" id="productName" placeholder="Название товара">
+            <input type="text" class="name-input" id="productName" placeholder="Название">
             
             <div class="flavors-section">
                 <div class="flavors-title">Вкусы:</div>
@@ -532,14 +596,18 @@
     </div>
 
     <script>
+        // Проверка авторизации
         if (!sessionStorage.getItem('admin_logged')) {
             window.location.href = 'admin.html';
         }
         
+        // КЛЮЧ ХРАНИЛИЩА ДЛЯ ОДНОРАЗОК
         const STORAGE_KEY = 'odnorazkiData';
+        
         let currentEditIndex = -1;
         let tempImage = null;
         
+        // Загрузка товаров
         function loadProducts() {
             const data = JSON.parse(localStorage.getItem(STORAGE_KEY)) || [];
             const grid = document.getElementById('productsGrid');
@@ -549,47 +617,117 @@
                 return;
             }
             
-            grid.innerHTML = data.map((product, index) => `
-                <div class="product-card">
-                    <div class="product-header">
-                        <span class="product-title">${product.name}</span>
-                        <button class="delete-btn" onclick="deleteProduct(${index})">🗑️</button>
-                    </div>
-                    <div class="product-image" onclick="editProduct(${index})">
-                        ${product.image ? `<img src="${product.image}" alt="${product.name}">` : '<div class="image-placeholder">📷</div>'}
-                    </div>
-                    <div class="flavors-section">
-                        <div class="flavors-title">Вкусов: ${product.flavors.length}</div>
-                        <div class="flavors-list">
-                            ${product.flavors.slice(0, 3).map(f => `
-                                <div class="flavor-item">
-                                    <span class="flavor-name" style="color: ${f.inStock ? 'white' : '#666'}">${f.name}</span>
-                                    <span class="flavor-status" style="background: ${f.inStock ? '#4ade80' : '#f87171'}"></span>
-                                </div>
-                            `).join('')}
-                            ${product.flavors.length > 3 ? '<div class="flavor-item">...</div>' : ''}
+            grid.innerHTML = data.map((product, index) => {
+                // Проверяем, является ли изображение DataURL (настоящее фото) или эмодзи
+                const isDataUrl = product.image && product.image.startsWith('data:image');
+                
+                return `
+                    <div class="product-card">
+                        <div class="product-header">
+                            <span class="product-title">${product.name}</span>
+                            <button class="delete-btn" onclick="deleteProduct(${index})">🗑️</button>
                         </div>
+                        <div class="product-image" onclick="editProduct(${index})">
+                            ${product.image ? 
+                                (isDataUrl ? 
+                                    `<img src="${product.image}" alt="${product.name}" style="width: 100%; height: 100%; object-fit: cover;">` : 
+                                    `<div class="image-placeholder" style="font-size: 3em;">${product.image}</div>`
+                                ) : 
+                                '<div class="image-placeholder">📷</div>'
+                            }
+                        </div>
+                        <div class="flavors-section">
+                            <div class="flavors-title">Вкусов: ${product.flavors.length}</div>
+                            <div class="flavors-list">
+                                ${product.flavors.slice(0, 3).map(f => `
+                                    <div class="flavor-item">
+                                        <div class="flavor-info">
+                                            <span class="flavor-name" style="color: ${f.inStock ? 'white' : '#666'}">${f.name}</span>
+                                        </div>
+                                        <span class="flavor-status" style="background: ${f.inStock ? '#4ade80' : '#f87171'}"></span>
+                                    </div>
+                                `).join('')}
+                                ${product.flavors.length > 3 ? '<div class="flavor-item">...</div>' : ''}
+                            </div>
+                        </div>
+                        <div class="product-price">${product.price}</div>
+                        <button class="edit-btn" onclick="editProduct(${index})">✏️ Редактировать</button>
                     </div>
-                    <div class="product-price">${product.price}</div>
-                    <button class="edit-btn" onclick="editProduct(${index})">✏️ Редактировать</button>
-                </div>
-            `).join('');
+                `;
+            }).join('');
         }
         
+        // Функция для выбора изображения из галереи
+        function selectImage() {
+            const fileInput = document.createElement('input');
+            fileInput.type = 'file';
+            fileInput.accept = 'image/*';
+            fileInput.style.display = 'none';
+            
+            fileInput.onchange = function(event) {
+                const file = event.target.files[0];
+                if (file) {
+                    // Проверяем размер файла (не больше 2MB)
+                    if (file.size > 2 * 1024 * 1024) {
+                        alert('Файл слишком большой. Максимальный размер - 2MB');
+                        return;
+                    }
+                    
+                    // Проверяем тип файла
+                    if (!file.type.startsWith('image/')) {
+                        alert('Пожалуйста, выберите изображение');
+                        return;
+                    }
+                    
+                    const reader = new FileReader();
+                    reader.onload = function(e) {
+                        tempImage = e.target.result;
+                        
+                        const preview = document.getElementById('imagePreview');
+                        const placeholder = document.getElementById('imagePlaceholder');
+                        
+                        preview.src = tempImage;
+                        preview.style.display = 'block';
+                        placeholder.style.display = 'none';
+                    };
+                    reader.readAsDataURL(file);
+                }
+            };
+            
+            document.body.appendChild(fileInput);
+            fileInput.click();
+            
+            setTimeout(() => {
+                document.body.removeChild(fileInput);
+            }, 1000);
+        }
+        
+        // Открыть модальное окно для добавления
         function openAddModal() {
             currentEditIndex = -1;
-            document.getElementById('modalTitle').textContent = '➕ Новый товар';
+            document.getElementById('modalTitle').textContent = '➕ Новая одноразка';
             document.getElementById('productName').value = '';
             document.getElementById('productPrice').value = '';
             document.getElementById('flavorsList').innerHTML = '';
-            document.getElementById('imagePreview').style.display = 'none';
-            document.getElementById('imagePlaceholder').style.display = 'block';
-            document.getElementById('imagePlaceholder').textContent = '📷';
+            
+            // Сбрасываем изображение
+            const preview = document.getElementById('imagePreview');
+            const placeholder = document.getElementById('imagePlaceholder');
+            preview.style.display = 'none';
+            placeholder.style.display = 'flex';
+            placeholder.innerHTML = `
+                <div style="text-align: center;">
+                    <div style="font-size: 2em;">📷</div>
+                    <div style="font-size: 0.8em; margin-top: 5px;">Нажмите для выбора фото</div>
+                </div>
+            `;
             tempImage = null;
+            
             document.getElementById('productModal').classList.add('active');
             document.body.classList.add('modal-open');
         }
         
+        // Редактировать товар
         function editProduct(index) {
             const data = JSON.parse(localStorage.getItem(STORAGE_KEY)) || [];
             const product = data[index];
@@ -605,15 +743,34 @@
                 addFlavorField(flavor.name, flavor.inStock);
             });
             
-            if (product.image) {
-                document.getElementById('imagePreview').src = product.image;
-                document.getElementById('imagePreview').style.display = 'block';
-                document.getElementById('imagePlaceholder').style.display = 'none';
+            // Загружаем изображение
+            const preview = document.getElementById('imagePreview');
+            const placeholder = document.getElementById('imagePlaceholder');
+            
+            if (product.image && product.image.startsWith('data:image')) {
+                preview.src = product.image;
+                preview.style.display = 'block';
+                placeholder.style.display = 'none';
+                tempImage = product.image;
+            } else if (product.image) {
+                placeholder.innerHTML = `
+                    <div style="text-align: center;">
+                        <div style="font-size: 3em;">${product.image}</div>
+                        <div style="font-size: 0.8em; margin-top: 5px;">Эмодзи (нажмите для замены на фото)</div>
+                    </div>
+                `;
+                preview.style.display = 'none';
+                placeholder.style.display = 'flex';
                 tempImage = product.image;
             } else {
-                document.getElementById('imagePreview').style.display = 'none';
-                document.getElementById('imagePlaceholder').style.display = 'block';
-                document.getElementById('imagePlaceholder').textContent = '📷';
+                placeholder.innerHTML = `
+                    <div style="text-align: center;">
+                        <div style="font-size: 2em;">📷</div>
+                        <div style="font-size: 0.8em; margin-top: 5px;">Нажмите для выбора фото</div>
+                    </div>
+                `;
+                preview.style.display = 'none';
+                placeholder.style.display = 'flex';
                 tempImage = null;
             }
             
@@ -621,47 +778,50 @@
             document.body.classList.add('modal-open');
         }
         
+        // Добавить поле вкуса
         function addFlavorField(name = '', inStock = true) {
             const container = document.getElementById('flavorsList');
             const div = document.createElement('div');
             div.className = 'flavor-item';
             div.innerHTML = `
-                <input type="text" placeholder="Название вкуса" value="${name}">
-                <input type="checkbox" ${inStock ? 'checked' : ''} title="В наличии">
-                <button class="remove-flavor" onclick="this.parentElement.remove()">✕</button>
+                <div class="flavor-row">
+                    <input type="text" placeholder="Вкус" value="${name}">
+                    <input type="checkbox" ${inStock ? 'checked' : ''} title="В наличии">
+                    <button class="remove-flavor" onclick="this.parentElement.parentElement.remove()">✕</button>
+                </div>
             `;
             container.appendChild(div);
-            setTimeout(() => div.scrollIntoView({ behavior: 'smooth', block: 'center' }), 100);
+            
+            setTimeout(() => {
+                div.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            }, 100);
         }
         
-        function selectImage() {
-            const placeholder = document.getElementById('imagePlaceholder');
-            const preview = document.getElementById('imagePreview');
-            const icons = ['🍓', '🍊', '🍇', '🍎', '🍒', '🍋', '🍉', '🍑'];
-            const randomIcon = icons[Math.floor(Math.random() * icons.length)];
-            placeholder.textContent = randomIcon;
-            preview.style.display = 'none';
-            placeholder.style.display = 'block';
-            tempImage = randomIcon;
-        }
-        
+        // Сохранить товар
         function saveProduct() {
             const name = document.getElementById('productName').value.trim();
             const price = document.getElementById('productPrice').value.trim();
             const flavorItems = document.getElementById('flavorsList').children;
             
-            if (!name || !price) {
-                alert('Заполните все поля!');
+            if (!name) {
+                alert('Введите название товара!');
+                return;
+            }
+            
+            if (!price) {
+                alert('Введите цену!');
                 return;
             }
             
             const flavors = [];
             for (let item of flavorItems) {
-                const input = item.querySelector('input[type="text"]');
-                const checkbox = item.querySelector('input[type="checkbox"]');
-                if (input.value.trim()) {
+                const row = item.querySelector('.flavor-row');
+                const nameInput = row.querySelector('input[type="text"]');
+                const checkbox = row.querySelector('input[type="checkbox"]');
+                
+                if (nameInput.value.trim()) {
                     flavors.push({
-                        name: input.value.trim(),
+                        name: nameInput.value.trim(),
                         inStock: checkbox.checked
                     });
                 }
@@ -672,7 +832,13 @@
                 return;
             }
             
-            const product = { name, image: tempImage, flavors, price };
+            const product = {
+                name: name,
+                image: tempImage,
+                flavors: flavors,
+                price: price
+            };
+            
             const data = JSON.parse(localStorage.getItem(STORAGE_KEY)) || [];
             
             if (currentEditIndex === -1) {
@@ -686,6 +852,7 @@
             loadProducts();
         }
         
+        // Удалить товар
         function deleteProduct(index) {
             if (confirm('Удалить этот товар?')) {
                 const data = JSON.parse(localStorage.getItem(STORAGE_KEY)) || [];
@@ -700,6 +867,7 @@
             document.body.classList.remove('modal-open');
         }
         
+        // Загружаем товары
         loadProducts();
     </script>
 </body>

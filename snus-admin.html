@@ -373,10 +373,38 @@
         
         /* Поля ввода в модальном окне */
         .modal .product-image {
-            height: 120px;
-            margin-bottom: 20px;
+            width: 100%;
+            height: 150px;
             background: rgba(255, 255, 255, 0.05);
             border: 2px dashed rgba(255, 215, 0, 0.3);
+            border-radius: 15px;
+            margin-bottom: 20px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            overflow: hidden;
+            transition: all 0.3s ease;
+        }
+        
+        .modal .product-image:hover {
+            border-color: #ffd700;
+            background: rgba(255, 215, 0, 0.1);
+        }
+        
+        .modal .product-image img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+        
+        .image-placeholder {
+            width: 100%;
+            height: 100%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: rgba(255, 255, 255, 0.5);
         }
         
         .modal .name-input,
@@ -399,7 +427,7 @@
             background: rgba(255, 255, 255, 0.08);
         }
         
-        /* ИСПРАВЛЕНО: Список вкусов с крепостью в модальном окне */
+        /* Список вкусов с крепостью в модальном окне */
         .modal .flavors-section {
             margin-bottom: 20px;
         }
@@ -442,7 +470,6 @@
             -webkit-appearance: none;
         }
         
-        /* ИСПРАВЛЕНО: Поле для крепости теперь не съезжает */
         .strength-input {
             flex: 1;
             min-width: 70px;
@@ -494,7 +521,7 @@
             background: rgba(255, 255, 255, 0.03);
             border: 2px dashed rgba(255, 215, 0, 0.3);
             color: rgba(255, 215, 0, 0.7);
-            margin-top: 10px;
+            margin-top: 5px;
             width: 100%;
             cursor: pointer;
         }
@@ -554,10 +581,6 @@
             .strength-input {
                 min-width: 60px;
             }
-            
-            .unit-label {
-                min-width: 25px;
-            }
         }
     </style>
 </head>
@@ -591,16 +614,21 @@
             </div>
             
             <div class="product-image" onclick="selectImage()" id="modalImage">
-                <div class="image-placeholder" id="imagePlaceholder">🍃</div>
-                <img id="imagePreview" style="display: none;">
+                <div class="image-placeholder" id="imagePlaceholder">
+                    <div style="text-align: center;">
+                        <div style="font-size: 2em;">📷</div>
+                        <div style="font-size: 0.8em; margin-top: 5px;">Нажмите для выбора фото</div>
+                    </div>
+                </div>
+                <img id="imagePreview" style="display: none; width: 100%; height: 100%; object-fit: cover;">
             </div>
             
             <input type="text" class="name-input" id="productName" placeholder="Название бренда/вкуса">
             
             <div class="flavors-section">
-                <div class="flavors-title">Варианты вкуса и крепости:</div>
+                <div class="flavors-title">Вкусы и крепость (mg):</div>
                 <div id="flavorsList" class="flavors-list"></div>
-                <button class="add-flavor-btn" onclick="addFlavorField()">+ Добавить вариант</button>
+                <button class="add-flavor-btn" onclick="addFlavorField()">+ Добавить вкус</button>
                 <div class="strength-hint">* Крепость указывается только числом (например: 43)</div>
             </div>
             
@@ -632,34 +660,90 @@
                 return;
             }
             
-            grid.innerHTML = data.map((product, index) => `
-                <div class="product-card">
-                    <div class="product-header">
-                        <span class="product-title">${product.name}</span>
-                        <button class="delete-btn" onclick="deleteProduct(${index})">🗑️</button>
-                    </div>
-                    <div class="product-image" onclick="editProduct(${index})">
-                        ${product.image ? `<img src="${product.image}" alt="${product.name}">` : '<div class="image-placeholder">🍃</div>'}
-                    </div>
-                    <div class="flavors-section">
-                        <div class="flavors-title">Вариантов: ${product.flavors.length}</div>
-                        <div class="flavors-list">
-                            ${product.flavors.slice(0, 3).map(f => `
-                                <div class="flavor-item">
-                                    <div class="flavor-info">
-                                        <span class="flavor-name" style="color: ${f.inStock ? 'white' : '#666'}">${f.name}</span>
-                                        ${f.strength ? `<span class="flavor-strength-badge">${f.strength} mg</span>` : ''}
-                                    </div>
-                                    <span class="flavor-status" style="background: ${f.inStock ? '#4ade80' : '#f87171'}"></span>
-                                </div>
-                            `).join('')}
-                            ${product.flavors.length > 3 ? '<div class="flavor-item">...</div>' : ''}
+            grid.innerHTML = data.map((product, index) => {
+                // Проверяем, является ли изображение DataURL (настоящее фото) или эмодзи
+                const isDataUrl = product.image && product.image.startsWith('data:image');
+                
+                return `
+                    <div class="product-card">
+                        <div class="product-header">
+                            <span class="product-title">${product.name}</span>
+                            <button class="delete-btn" onclick="deleteProduct(${index})">🗑️</button>
                         </div>
+                        <div class="product-image" onclick="editProduct(${index})">
+                            ${product.image ? 
+                                (isDataUrl ? 
+                                    `<img src="${product.image}" alt="${product.name}" style="width: 100%; height: 100%; object-fit: cover;">` : 
+                                    `<div class="image-placeholder" style="font-size: 3em;">${product.image}</div>`
+                                ) : 
+                                '<div class="image-placeholder">📷</div>'
+                            }
+                        </div>
+                        <div class="flavors-section">
+                            <div class="flavors-title">Вариантов: ${product.flavors.length}</div>
+                            <div class="flavors-list">
+                                ${product.flavors.slice(0, 3).map(f => `
+                                    <div class="flavor-item">
+                                        <div class="flavor-info">
+                                            <span class="flavor-name" style="color: ${f.inStock ? 'white' : '#666'}">${f.name}</span>
+                                            ${f.strength ? `<span class="flavor-strength-badge">${f.strength} mg</span>` : ''}
+                                        </div>
+                                        <span class="flavor-status" style="background: ${f.inStock ? '#4ade80' : '#f87171'}"></span>
+                                    </div>
+                                `).join('')}
+                                ${product.flavors.length > 3 ? '<div class="flavor-item">...</div>' : ''}
+                            </div>
+                        </div>
+                        <div class="product-price">${product.price}</div>
+                        <button class="edit-btn" onclick="editProduct(${index})">✏️ Редактировать</button>
                     </div>
-                    <div class="product-price">${product.price}</div>
-                    <button class="edit-btn" onclick="editProduct(${index})">✏️ Редактировать</button>
-                </div>
-            `).join('');
+                `;
+            }).join('');
+        }
+        
+        // Функция для выбора изображения из галереи
+        function selectImage() {
+            const fileInput = document.createElement('input');
+            fileInput.type = 'file';
+            fileInput.accept = 'image/*';
+            fileInput.style.display = 'none';
+            
+            fileInput.onchange = function(event) {
+                const file = event.target.files[0];
+                if (file) {
+                    // Проверяем размер файла (не больше 2MB)
+                    if (file.size > 2 * 1024 * 1024) {
+                        alert('Файл слишком большой. Максимальный размер - 2MB');
+                        return;
+                    }
+                    
+                    // Проверяем тип файла
+                    if (!file.type.startsWith('image/')) {
+                        alert('Пожалуйста, выберите изображение');
+                        return;
+                    }
+                    
+                    const reader = new FileReader();
+                    reader.onload = function(e) {
+                        tempImage = e.target.result;
+                        
+                        const preview = document.getElementById('imagePreview');
+                        const placeholder = document.getElementById('imagePlaceholder');
+                        
+                        preview.src = tempImage;
+                        preview.style.display = 'block';
+                        placeholder.style.display = 'none';
+                    };
+                    reader.readAsDataURL(file);
+                }
+            };
+            
+            document.body.appendChild(fileInput);
+            fileInput.click();
+            
+            setTimeout(() => {
+                document.body.removeChild(fileInput);
+            }, 1000);
         }
         
         // Открыть модальное окно для добавления
@@ -669,10 +753,20 @@
             document.getElementById('productName').value = '';
             document.getElementById('productPrice').value = '';
             document.getElementById('flavorsList').innerHTML = '';
-            document.getElementById('imagePreview').style.display = 'none';
-            document.getElementById('imagePlaceholder').style.display = 'block';
-            document.getElementById('imagePlaceholder').textContent = '🍃';
-            tempImage = '🍃';
+            
+            // Сбрасываем изображение
+            const preview = document.getElementById('imagePreview');
+            const placeholder = document.getElementById('imagePlaceholder');
+            preview.style.display = 'none';
+            placeholder.style.display = 'flex';
+            placeholder.innerHTML = `
+                <div style="text-align: center;">
+                    <div style="font-size: 2em;">📷</div>
+                    <div style="font-size: 0.8em; margin-top: 5px;">Нажмите для выбора фото</div>
+                </div>
+            `;
+            tempImage = null;
+            
             document.getElementById('productModal').classList.add('active');
             document.body.classList.add('modal-open');
         }
@@ -693,23 +787,42 @@
                 addFlavorField(flavor.name, flavor.strength, flavor.inStock);
             });
             
-            if (product.image) {
-                document.getElementById('imagePreview').src = product.image;
-                document.getElementById('imagePreview').style.display = 'block';
-                document.getElementById('imagePlaceholder').style.display = 'none';
+            // Загружаем изображение
+            const preview = document.getElementById('imagePreview');
+            const placeholder = document.getElementById('imagePlaceholder');
+            
+            if (product.image && product.image.startsWith('data:image')) {
+                preview.src = product.image;
+                preview.style.display = 'block';
+                placeholder.style.display = 'none';
+                tempImage = product.image;
+            } else if (product.image) {
+                placeholder.innerHTML = `
+                    <div style="text-align: center;">
+                        <div style="font-size: 3em;">${product.image}</div>
+                        <div style="font-size: 0.8em; margin-top: 5px;">Эмодзи (нажмите для замены на фото)</div>
+                    </div>
+                `;
+                preview.style.display = 'none';
+                placeholder.style.display = 'flex';
                 tempImage = product.image;
             } else {
-                document.getElementById('imagePreview').style.display = 'none';
-                document.getElementById('imagePlaceholder').style.display = 'block';
-                document.getElementById('imagePlaceholder').textContent = '🍃';
-                tempImage = '🍃';
+                placeholder.innerHTML = `
+                    <div style="text-align: center;">
+                        <div style="font-size: 2em;">📷</div>
+                        <div style="font-size: 0.8em; margin-top: 5px;">Нажмите для выбора фото</div>
+                    </div>
+                `;
+                preview.style.display = 'none';
+                placeholder.style.display = 'flex';
+                tempImage = null;
             }
             
             document.getElementById('productModal').classList.add('active');
             document.body.classList.add('modal-open');
         }
         
-        // ИСПРАВЛЕНО: Добавить поле вкуса с крепостью (правильное выравнивание)
+        // Добавить поле вкуса с крепостью
         function addFlavorField(name = '', strength = '', inStock = true) {
             const container = document.getElementById('flavorsList');
             const div = document.createElement('div');
@@ -728,20 +841,6 @@
             setTimeout(() => {
                 div.scrollIntoView({ behavior: 'smooth', block: 'center' });
             }, 100);
-        }
-        
-        // Выбор изображения
-        function selectImage() {
-            const placeholder = document.getElementById('imagePlaceholder');
-            const preview = document.getElementById('imagePreview');
-            
-            const demoImages = ['🍃', '🌿', '🍂', '🌱', '🍀', '🌾', '🍁', '🌻'];
-            const randomIcon = demoImages[Math.floor(Math.random() * demoImages.length)];
-            
-            placeholder.textContent = randomIcon;
-            preview.style.display = 'none';
-            placeholder.style.display = 'block';
-            tempImage = randomIcon;
         }
         
         // Сохранить товар
@@ -777,7 +876,7 @@
             }
             
             if (flavors.length === 0) {
-                alert('Добавьте хотя бы один вариант!');
+                alert('Добавьте хотя бы один вкус!');
                 return;
             }
             
