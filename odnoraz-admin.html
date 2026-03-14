@@ -1,0 +1,706 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Управление одноразками</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            -webkit-tap-highlight-color: transparent;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: #0f0c1f;
+            min-height: 100vh;
+            padding: 12px;
+            position: relative;
+            overflow-x: hidden;
+        }
+        
+        body.modal-open {
+            overflow: hidden;
+            position: fixed;
+            width: 100%;
+            height: 100%;
+        }
+        
+        body::before {
+            content: '';
+            position: fixed;
+            width: 200%;
+            height: 200%;
+            background: radial-gradient(circle, rgba(76, 40, 140, 0.4) 0%, rgba(15, 12, 31, 1) 70%);
+            animation: rotate 30s linear infinite;
+            z-index: -1;
+            top: -50%;
+            left: -50%;
+        }
+        
+        @keyframes rotate {
+            from { transform: rotate(0deg); }
+            to { transform: rotate(360deg); }
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: rgba(255, 255, 255, 0.08);
+            backdrop-filter: blur(15px);
+            -webkit-backdrop-filter: blur(15px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 30px;
+            padding: 25px 18px;
+            box-shadow: 0 30px 60px rgba(0, 0, 0, 0.5);
+            position: relative;
+            z-index: 1;
+            animation: fadeInUp 0.8s ease;
+        }
+        
+        @keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translateY(30px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+        
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 25px;
+            flex-wrap: wrap;
+            gap: 12px;
+        }
+        
+        h1 {
+            color: transparent;
+            background: linear-gradient(135deg, #ffd700, #ff8c00, #ff6b6b);
+            background-clip: text;
+            -webkit-background-clip: text;
+            font-size: 2em;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            font-weight: 900;
+        }
+        
+        .back-button {
+            padding: 10px 20px;
+            background: rgba(255, 255, 255, 0.03);
+            color: white;
+            text-decoration: none;
+            border-radius: 40px;
+            transition: all 0.3s ease;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            font-size: 0.9em;
+            white-space: nowrap;
+        }
+        
+        .back-button:active {
+            background: rgba(255, 255, 255, 0.1);
+            transform: scale(0.95);
+        }
+        
+        .products-grid {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 16px;
+            margin-bottom: 20px;
+        }
+        
+        .product-card {
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 22px;
+            padding: 16px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            transition: all 0.3s ease;
+        }
+        
+        .product-card:active {
+            transform: scale(0.98);
+            border-color: rgba(255, 215, 0, 0.3);
+        }
+        
+        .product-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 12px;
+            padding-bottom: 8px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        
+        .product-title {
+            color: white;
+            font-size: 1.1em;
+            font-weight: 600;
+        }
+        
+        .delete-btn {
+            background: none;
+            border: none;
+            color: rgba(255, 107, 107, 0.5);
+            font-size: 1.4em;
+            cursor: pointer;
+            padding: 5px 10px;
+        }
+        
+        .delete-btn:active {
+            color: #ff6b6b;
+            transform: scale(1.1);
+        }
+        
+        .product-image {
+            width: 100%;
+            height: 100px;
+            background: rgba(255, 255, 255, 0.03);
+            border-radius: 15px;
+            margin-bottom: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            overflow: hidden;
+            border: 2px dashed rgba(255, 255, 255, 0.1);
+        }
+        
+        .product-image:active {
+            border-color: #ffd700;
+            background: rgba(255, 215, 0, 0.1);
+        }
+        
+        .product-image img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+        
+        .image-placeholder {
+            color: rgba(255, 255, 255, 0.3);
+            font-size: 2em;
+        }
+        
+        .flavors-section {
+            margin-bottom: 12px;
+        }
+        
+        .flavors-title {
+            color: rgba(255, 255, 255, 0.7);
+            font-size: 0.85em;
+            margin-bottom: 8px;
+        }
+        
+        .flavors-list {
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+        }
+        
+        .flavor-item {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            background: rgba(255, 255, 255, 0.03);
+            padding: 6px 8px;
+            border-radius: 10px;
+            border: 1px solid rgba(255, 255, 255, 0.05);
+        }
+        
+        .flavor-name {
+            flex: 1;
+            color: white;
+            font-size: 0.9em;
+        }
+        
+        .flavor-status {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            display: inline-block;
+        }
+        
+        .product-price {
+            color: #ffd700;
+            font-size: 1.3em;
+            font-weight: bold;
+            text-align: right;
+            margin: 12px 0 8px;
+            padding-top: 8px;
+            border-top: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        .product-price::after {
+            content: ' Br';
+            font-size: 0.8em;
+        }
+        
+        .edit-btn {
+            width: 100%;
+            padding: 10px;
+            background: linear-gradient(135deg, rgba(255, 215, 0, 0.15), rgba(255, 140, 0, 0.15));
+            color: white;
+            border: 1px solid rgba(255, 215, 0, 0.2);
+            border-radius: 20px;
+            font-size: 0.95em;
+            font-weight: 600;
+            cursor: pointer;
+        }
+        
+        .edit-btn:active {
+            background: linear-gradient(135deg, #ffd700, #ff8c00);
+            transform: scale(0.96);
+        }
+        
+        .add-product-btn {
+            width: 100%;
+            min-height: 120px;
+            background: rgba(255, 255, 255, 0.03);
+            border: 3px dashed rgba(255, 255, 255, 0.1);
+            border-radius: 22px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            color: rgba(255, 255, 255, 0.5);
+            font-size: 2.5em;
+            cursor: pointer;
+        }
+        
+        .add-product-btn:active {
+            border-color: #ffd700;
+            color: #ffd700;
+            background: rgba(255, 215, 0, 0.05);
+            transform: scale(0.98);
+        }
+        
+        .add-product-btn span {
+            font-size: 0.2em;
+        }
+        
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: #0f0c1f;
+            z-index: 10000;
+            overflow-y: auto;
+            -webkit-overflow-scrolling: touch;
+        }
+        
+        .modal.active {
+            display: block;
+        }
+        
+        .modal-content {
+            min-height: 100%;
+            background: rgba(20, 15, 35, 0.98);
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+            padding: 20px 16px 30px;
+            position: relative;
+        }
+        
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 25px;
+            padding-bottom: 15px;
+            border-bottom: 1px solid rgba(255, 215, 0, 0.2);
+            position: sticky;
+            top: 0;
+            background: rgba(20, 15, 35, 0.98);
+            z-index: 10;
+            padding-top: 10px;
+        }
+        
+        .modal-header h2 {
+            color: transparent;
+            background: linear-gradient(135deg, #ffd700, #ff8c00);
+            background-clip: text;
+            -webkit-background-clip: text;
+            font-size: 1.6em;
+            font-weight: 800;
+        }
+        
+        .close-modal {
+            color: rgba(255, 255, 255, 0.7);
+            font-size: 2.2em;
+            line-height: 0.8;
+            cursor: pointer;
+            padding: 5px 15px;
+            margin-right: -10px;
+        }
+        
+        .close-modal:active {
+            color: #ff6b6b;
+            transform: scale(1.1);
+        }
+        
+        .modal .product-image {
+            height: 120px;
+            margin-bottom: 20px;
+            background: rgba(255, 255, 255, 0.05);
+            border: 2px dashed rgba(255, 215, 0, 0.3);
+        }
+        
+        .modal .name-input,
+        .modal .price-input {
+            width: 100%;
+            padding: 14px 16px;
+            margin-bottom: 20px;
+            background: rgba(255, 255, 255, 0.05);
+            border: 2px solid rgba(255, 255, 255, 0.1);
+            border-radius: 18px;
+            color: white;
+            font-size: 1em;
+            -webkit-appearance: none;
+        }
+        
+        .modal .name-input:focus,
+        .modal .price-input:focus {
+            outline: none;
+            border-color: #ffd700;
+            background: rgba(255, 255, 255, 0.08);
+        }
+        
+        .modal .flavors-section {
+            margin-bottom: 20px;
+        }
+        
+        .modal .flavors-title {
+            font-size: 1em;
+            margin-bottom: 12px;
+            color: rgba(255, 255, 255, 0.9);
+        }
+        
+        .modal .flavors-list {
+            gap: 10px;
+            margin-bottom: 12px;
+        }
+        
+        .modal .flavor-item {
+            background: rgba(255, 255, 255, 0.05);
+            padding: 8px 12px;
+            border-radius: 16px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .modal .flavor-item input[type="text"] {
+            flex: 1;
+            padding: 12px;
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 12px;
+            color: white;
+            font-size: 0.95em;
+            -webkit-appearance: none;
+        }
+        
+        .modal .flavor-item input[type="text"]:focus {
+            outline: none;
+            border-color: #ffd700;
+        }
+        
+        .modal .flavor-item input[type="checkbox"] {
+            width: 24px;
+            height: 24px;
+            accent-color: #4ade80;
+            transform: scale(1.1);
+        }
+        
+        .modal .flavor-item .remove-flavor {
+            font-size: 1.4em;
+            padding: 5px 10px;
+            color: rgba(255, 107, 107, 0.7);
+            background: none;
+            border: none;
+            cursor: pointer;
+        }
+        
+        .modal .add-flavor-btn {
+            padding: 14px;
+            border-radius: 18px;
+            font-size: 1em;
+            background: rgba(255, 255, 255, 0.03);
+            border: 2px dashed rgba(255, 215, 0, 0.3);
+            color: rgba(255, 215, 0, 0.7);
+            margin-top: 5px;
+            width: 100%;
+            cursor: pointer;
+        }
+        
+        .modal .add-flavor-btn:active {
+            background: rgba(255, 215, 0, 0.1);
+            transform: scale(0.98);
+        }
+        
+        .modal .save-btn {
+            width: 100%;
+            padding: 16px;
+            font-size: 1.1em;
+            border-radius: 30px;
+            background: linear-gradient(135deg, #ffd700, #ff8c00);
+            color: white;
+            border: none;
+            margin-top: 25px;
+            margin-bottom: 20px;
+            font-weight: bold;
+            box-shadow: 0 10px 25px rgba(255, 215, 0, 0.3);
+            cursor: pointer;
+        }
+        
+        .modal .save-btn:active {
+            transform: scale(0.96);
+            opacity: 0.9;
+        }
+        
+        .particle {
+            position: fixed;
+            width: 4px;
+            height: 4px;
+            background: white;
+            border-radius: 50%;
+            opacity: 0.2;
+            animation: float 6s infinite;
+            z-index: 0;
+            pointer-events: none;
+        }
+        
+        @keyframes float {
+            0%, 100% { transform: translateY(0) translateX(0); }
+            50% { transform: translateY(-30px) translateX(20px); }
+        }
+    </style>
+</head>
+<body>
+    <div class="particle" style="top: 20%; left: 10%;"></div>
+    <div class="particle" style="top: 70%; left: 80%; animation-delay: 1s;"></div>
+    <div class="particle" style="top: 40%; left: 90%; animation-delay: 2s;"></div>
+    
+    <div class="container">
+        <div class="header">
+            <h1>⚡ Управление одноразками</h1>
+            <a href="admin-panel.html" class="back-button">← Назад</a>
+        </div>
+        
+        <div id="productsGrid" class="products-grid"></div>
+        
+        <div class="add-product-btn" onclick="openAddModal()">
+            +
+            <span>Добавить товар</span>
+        </div>
+    </div>
+    
+    <div id="productModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 id="modalTitle">➕ Новый товар</h2>
+                <span class="close-modal" onclick="closeModal()">✕</span>
+            </div>
+            
+            <div class="product-image" onclick="selectImage()" id="modalImage">
+                <div class="image-placeholder" id="imagePlaceholder">📷</div>
+                <img id="imagePreview" style="display: none;">
+            </div>
+            
+            <input type="text" class="name-input" id="productName" placeholder="Название товара">
+            
+            <div class="flavors-section">
+                <div class="flavors-title">Вкусы:</div>
+                <div id="flavorsList" class="flavors-list"></div>
+                <button class="add-flavor-btn" onclick="addFlavorField()">+ Добавить вкус</button>
+            </div>
+            
+            <input type="text" class="price-input" id="productPrice" placeholder="Цена (например: 590)">
+            
+            <button class="save-btn" onclick="saveProduct()">Сохранить товар</button>
+        </div>
+    </div>
+
+    <script>
+        if (!sessionStorage.getItem('admin_logged')) {
+            window.location.href = 'admin.html';
+        }
+        
+        const STORAGE_KEY = 'odnorazkiData';
+        let currentEditIndex = -1;
+        let tempImage = null;
+        
+        function loadProducts() {
+            const data = JSON.parse(localStorage.getItem(STORAGE_KEY)) || [];
+            const grid = document.getElementById('productsGrid');
+            
+            if (data.length === 0) {
+                grid.innerHTML = '';
+                return;
+            }
+            
+            grid.innerHTML = data.map((product, index) => `
+                <div class="product-card">
+                    <div class="product-header">
+                        <span class="product-title">${product.name}</span>
+                        <button class="delete-btn" onclick="deleteProduct(${index})">🗑️</button>
+                    </div>
+                    <div class="product-image" onclick="editProduct(${index})">
+                        ${product.image ? `<img src="${product.image}" alt="${product.name}">` : '<div class="image-placeholder">📷</div>'}
+                    </div>
+                    <div class="flavors-section">
+                        <div class="flavors-title">Вкусов: ${product.flavors.length}</div>
+                        <div class="flavors-list">
+                            ${product.flavors.slice(0, 3).map(f => `
+                                <div class="flavor-item">
+                                    <span class="flavor-name" style="color: ${f.inStock ? 'white' : '#666'}">${f.name}</span>
+                                    <span class="flavor-status" style="background: ${f.inStock ? '#4ade80' : '#f87171'}"></span>
+                                </div>
+                            `).join('')}
+                            ${product.flavors.length > 3 ? '<div class="flavor-item">...</div>' : ''}
+                        </div>
+                    </div>
+                    <div class="product-price">${product.price}</div>
+                    <button class="edit-btn" onclick="editProduct(${index})">✏️ Редактировать</button>
+                </div>
+            `).join('');
+        }
+        
+        function openAddModal() {
+            currentEditIndex = -1;
+            document.getElementById('modalTitle').textContent = '➕ Новый товар';
+            document.getElementById('productName').value = '';
+            document.getElementById('productPrice').value = '';
+            document.getElementById('flavorsList').innerHTML = '';
+            document.getElementById('imagePreview').style.display = 'none';
+            document.getElementById('imagePlaceholder').style.display = 'block';
+            document.getElementById('imagePlaceholder').textContent = '📷';
+            tempImage = null;
+            document.getElementById('productModal').classList.add('active');
+            document.body.classList.add('modal-open');
+        }
+        
+        function editProduct(index) {
+            const data = JSON.parse(localStorage.getItem(STORAGE_KEY)) || [];
+            const product = data[index];
+            currentEditIndex = index;
+            
+            document.getElementById('modalTitle').textContent = '✏️ Редактировать';
+            document.getElementById('productName').value = product.name;
+            document.getElementById('productPrice').value = product.price.replace(' Br', '');
+            
+            const flavorsList = document.getElementById('flavorsList');
+            flavorsList.innerHTML = '';
+            product.flavors.forEach(flavor => {
+                addFlavorField(flavor.name, flavor.inStock);
+            });
+            
+            if (product.image) {
+                document.getElementById('imagePreview').src = product.image;
+                document.getElementById('imagePreview').style.display = 'block';
+                document.getElementById('imagePlaceholder').style.display = 'none';
+                tempImage = product.image;
+            } else {
+                document.getElementById('imagePreview').style.display = 'none';
+                document.getElementById('imagePlaceholder').style.display = 'block';
+                document.getElementById('imagePlaceholder').textContent = '📷';
+                tempImage = null;
+            }
+            
+            document.getElementById('productModal').classList.add('active');
+            document.body.classList.add('modal-open');
+        }
+        
+        function addFlavorField(name = '', inStock = true) {
+            const container = document.getElementById('flavorsList');
+            const div = document.createElement('div');
+            div.className = 'flavor-item';
+            div.innerHTML = `
+                <input type="text" placeholder="Название вкуса" value="${name}">
+                <input type="checkbox" ${inStock ? 'checked' : ''} title="В наличии">
+                <button class="remove-flavor" onclick="this.parentElement.remove()">✕</button>
+            `;
+            container.appendChild(div);
+            setTimeout(() => div.scrollIntoView({ behavior: 'smooth', block: 'center' }), 100);
+        }
+        
+        function selectImage() {
+            const placeholder = document.getElementById('imagePlaceholder');
+            const preview = document.getElementById('imagePreview');
+            const icons = ['🍓', '🍊', '🍇', '🍎', '🍒', '🍋', '🍉', '🍑'];
+            const randomIcon = icons[Math.floor(Math.random() * icons.length)];
+            placeholder.textContent = randomIcon;
+            preview.style.display = 'none';
+            placeholder.style.display = 'block';
+            tempImage = randomIcon;
+        }
+        
+        function saveProduct() {
+            const name = document.getElementById('productName').value.trim();
+            const price = document.getElementById('productPrice').value.trim();
+            const flavorItems = document.getElementById('flavorsList').children;
+            
+            if (!name || !price) {
+                alert('Заполните все поля!');
+                return;
+            }
+            
+            const flavors = [];
+            for (let item of flavorItems) {
+                const input = item.querySelector('input[type="text"]');
+                const checkbox = item.querySelector('input[type="checkbox"]');
+                if (input.value.trim()) {
+                    flavors.push({
+                        name: input.value.trim(),
+                        inStock: checkbox.checked
+                    });
+                }
+            }
+            
+            if (flavors.length === 0) {
+                alert('Добавьте хотя бы один вкус!');
+                return;
+            }
+            
+            const product = { name, image: tempImage, flavors, price };
+            const data = JSON.parse(localStorage.getItem(STORAGE_KEY)) || [];
+            
+            if (currentEditIndex === -1) {
+                data.push(product);
+            } else {
+                data[currentEditIndex] = product;
+            }
+            
+            localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
+            closeModal();
+            loadProducts();
+        }
+        
+        function deleteProduct(index) {
+            if (confirm('Удалить этот товар?')) {
+                const data = JSON.parse(localStorage.getItem(STORAGE_KEY)) || [];
+                data.splice(index, 1);
+                localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
+                loadProducts();
+            }
+        }
+        
+        function closeModal() {
+            document.getElementById('productModal').classList.remove('active');
+            document.body.classList.remove('modal-open');
+        }
+        
+        loadProducts();
+    </script>
+</body>
+</html>

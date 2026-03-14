@@ -1,0 +1,393 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Панель управления</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: #0f0c1f;
+            min-height: 100vh;
+            padding: 12px;
+            position: relative;
+            overflow-x: hidden;
+        }
+
+        body::before {
+            content: '';
+            position: fixed;
+            width: 200%;
+            height: 200%;
+            background: radial-gradient(circle, rgba(76, 40, 140, 0.4) 0%, rgba(15, 12, 31, 1) 70%);
+            animation: rotate 30s linear infinite;
+            z-index: -1;
+            top: -50%;
+            left: -50%;
+        }
+
+        @keyframes rotate {
+            from { transform: rotate(0deg); }
+            to { transform: rotate(360deg); }
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: rgba(255, 255, 255, 0.08);
+            backdrop-filter: blur(15px);
+            -webkit-backdrop-filter: blur(15px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 30px;
+            padding: 25px 18px;
+            box-shadow: 0 30px 60px rgba(0, 0, 0, 0.5);
+            position: relative;
+            z-index: 1;
+            animation: fadeInUp 0.8s ease;
+        }
+
+        @keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translateY(30px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 30px;
+            flex-wrap: wrap;
+            gap: 15px;
+        }
+
+        h1 {
+            color: transparent;
+            background: linear-gradient(135deg, #ffd700, #ff8c00, #ff6b6b);
+            background-clip: text;
+            -webkit-background-clip: text;
+            font-size: 2em;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            font-weight: 900;
+        }
+
+        .logout-btn {
+            padding: 12px 25px;
+            background: rgba(255, 255, 255, 0.03);
+            color: white;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 40px;
+            cursor: pointer;
+            font-size: 1em;
+            font-weight: 600;
+            transition: all 0.3s ease;
+        }
+
+        .logout-btn:active {
+            background: rgba(255, 107, 107, 0.2);
+            border-color: #ff6b6b;
+            transform: scale(0.95);
+        }
+
+        .categories-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin-top: 20px;
+        }
+
+        .category-card {
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 25px;
+            padding: 25px 15px;
+            text-align: center;
+            text-decoration: none;
+            transition: all 0.3s ease;
+            animation: cardAppear 0.5s ease backwards;
+            display: block;
+        }
+
+        .category-card:active {
+            transform: scale(0.97);
+            border-color: #ffd700;
+            background: rgba(255, 215, 0, 0.1);
+        }
+
+        .category-icon {
+            font-size: 3.5em;
+            margin-bottom: 10px;
+            filter: drop-shadow(0 0 15px rgba(255, 215, 0, 0.3));
+        }
+
+        .category-name {
+            color: white;
+            font-size: 1.2em;
+            font-weight: 600;
+            margin-bottom: 8px;
+        }
+
+        .category-stats {
+            color: rgba(255, 255, 255, 0.5);
+            font-size: 0.9em;
+        }
+
+        @keyframes cardAppear {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .stats-badge {
+            display: inline-block;
+            padding: 3px 8px;
+            background: rgba(255, 215, 0, 0.2);
+            border-radius: 20px;
+            color: #ffd700;
+            margin-left: 5px;
+        }
+
+        .particle {
+            position: fixed;
+            width: 4px;
+            height: 4px;
+            background: white;
+            border-radius: 50%;
+            opacity: 0.2;
+            animation: float 6s infinite;
+            z-index: 0;
+            pointer-events: none;
+        }
+
+        @keyframes float {
+            0%, 100% { transform: translateY(0) translateX(0); }
+            50% { transform: translateY(-30px) translateX(20px); }
+        }
+
+        @media (max-width: 480px) {
+            h1 {
+                font-size: 1.6em;
+            }
+
+            .categories-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="particle" style="top: 20%; left: 10%;"></div>
+    <div class="particle" style="top: 70%; left: 80%; animation-delay: 1s;"></div>
+    <div class="particle" style="top: 40%; left: 90%; animation-delay: 2s;"></div>
+
+    <div class="container">
+        <div class="header">
+            <h1>⚙️ Панель управления</h1>
+            <button class="logout-btn" onclick="logout()">🚪 Выйти</button>
+        </div>
+
+        <div class="categories-grid" id="categoriesGrid"></div>
+    </div>
+
+    <script>
+        // Проверка авторизации
+        if (!sessionStorage.getItem('admin_logged')) {
+            window.location.href = 'admin.html';
+        }
+
+        // Конфигурация разделов (добавлена карточка 'orders')
+        const categories = [
+            {
+                id: 'zhidkosti',
+                name: 'Жидкости',
+                icon: '💧',
+                color: '#0066ff',
+                adminPage: 'zhidk-admin.html',
+                storageKey: 'zhidkostiData'
+            },
+            {
+                id: 'rashodniki',
+                name: 'Расходники',
+                icon: '🔧',
+                color: '#ff6600',
+                adminPage: 'rashod-admin.html',
+                storageKey: 'rashodnikiData'
+            },
+            {
+                id: 'odnorazki',
+                name: 'Одноразки',
+                icon: '⚡',
+                color: '#ff0099',
+                adminPage: 'odnoraz-admin.html',
+                storageKey: 'odnorazkiData'
+            },
+            {
+                id: 'pod-sistemy',
+                name: 'POD системы',
+                icon: '📱',
+                color: '#9600ff',
+                adminPage: 'pod-admin.html',
+                storageKey: 'podData'
+            },
+            {
+                id: 'snus',
+                name: 'Снюс',
+                icon: '🍃',
+                color: '#00ff99',
+                adminPage: 'snus-admin.html',
+                storageKey: 'snusData'
+            },
+            {
+                id: 'orders', // Новая карточка для заказов
+                name: 'Заказы',
+                icon: '📦',
+                color: '#ffd700',
+                adminPage: 'admin-orders.html', // Ссылка на новый файл
+                storageKey: null // Для заказов своя логика
+            }
+        ];
+
+        // Загрузка статистики
+        function loadStats() {
+            const grid = document.getElementById('categoriesGrid');
+
+            grid.innerHTML = categories.map((cat, index) => {
+                let productsCount = 0;
+                let availableCount = 0;
+
+                // Для обычных категорий считаем товары
+                if (cat.storageKey) {
+                    const data = JSON.parse(localStorage.getItem(cat.storageKey)) || [];
+                    productsCount = data.length;
+                    availableCount = data.filter(p => 
+                        p.flavors && p.flavors.some(f => f.inStock)
+                    ).length;
+                }
+
+                // Для заказов считаем количество
+                if (cat.id === 'orders') {
+                    const orders = JSON.parse(localStorage.getItem('orders')) || [];
+                    // Считаем только невыполненные и не в архиве
+                    const pendingOrders = orders.filter(o => !o.completed && !o.archived);
+                    productsCount = pendingOrders.length;
+                }
+
+                return `
+                    <a href="${cat.adminPage}" class="category-card" style="animation-delay: ${index * 0.1}s">
+                        <div class="category-icon">${cat.icon}</div>
+                        <div class="category-name">${cat.name}</div>
+                        <div class="category-stats">
+                            ${cat.id === 'orders' ? 'Новых:' : 'Всего:'} 
+                            <span class="stats-badge">${productsCount}</span>
+                            ${cat.id !== 'orders' ? `
+                                <br>В наличии: <span class="stats-badge">${availableCount}</span>
+                            ` : ''}
+                        </div>
+                    </a>
+                `;
+            }).join('');
+        }
+
+        function logout() {
+            sessionStorage.removeItem('admin_logged');
+            window.location.href = 'admin.html';
+        }
+
+        // Инициализация данных для новых разделов, если их нет
+        function initializeData() {
+            categories.forEach(cat => {
+                if (cat.storageKey && !localStorage.getItem(cat.storageKey)) {
+                    // Создаем тестовые данные для каждого раздела
+                    const testData = [];
+                    if (cat.id === 'zhidkosti') {
+                        testData.push({
+                            name: 'HS Army Club',
+                            image: '🍓',
+                            flavors: [
+                                { name: 'Клубника', strength: '3', inStock: true },
+                                { name: 'Малина', strength: '6', inStock: true },
+                                { name: 'Мята', strength: '12', inStock: false }
+                            ],
+                            price: '590'
+                        });
+                    } else if (cat.id === 'rashodniki') {
+                        testData.push({
+                            name: 'Испарители GTX',
+                            image: '🔧',
+                            flavors: [
+                                { name: 'Стандарт', volume: '2', resistance: '0.6', inStock: true },
+                                { name: 'Премиум', volume: '4', resistance: '0.8', inStock: true },
+                                { name: 'Max', volume: '6', resistance: '1.2', inStock: false }
+                            ],
+                            price: '890'
+                        });
+                    } else if (cat.id === 'odnorazki') {
+                        testData.push({
+                            name: 'HQD Cuvie Plus',
+                            image: '⚡',
+                            flavors: [
+                                { name: 'Арбуз', strength: '20', inStock: true },
+                                { name: 'Манго', strength: '20', inStock: true },
+                                { name: 'Ледяная вишня', strength: '20', inStock: true }
+                            ],
+                            price: '590'
+                        });
+                    } else if (cat.id === 'pod-sistemy') {
+                        testData.push({
+                            name: 'Voopoo Drag S',
+                            image: '📱',
+                            flavors: [
+                                { name: 'Серебристый', inStock: true },
+                                { name: 'Черный', inStock: true },
+                                { name: 'Синий', inStock: false }
+                            ],
+                            price: '2990'
+                        });
+                    } else if (cat.id === 'snus') {
+                        testData.push({
+                            name: 'Siberia White',
+                            image: '🍃',
+                            flavors: [
+                                { name: 'Крепкий', strength: '43', inStock: true },
+                                { name: 'Мятный', strength: '30', inStock: true },
+                                { name: 'Фруктовый', strength: '20', inStock: false }
+                            ],
+                            price: '550'
+                        });
+                    }
+
+                    if (testData.length > 0) {
+                        localStorage.setItem(cat.storageKey, JSON.stringify(testData));
+                    }
+                }
+            });
+
+            // Инициализируем пустой массив заказов, если его нет
+            if (!localStorage.getItem('orders')) {
+                localStorage.setItem('orders', JSON.stringify([]));
+            }
+        }
+
+        initializeData();
+        loadStats();
+    </script>
+</body>
+</html>

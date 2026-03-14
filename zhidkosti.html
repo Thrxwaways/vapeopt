@@ -1,0 +1,776 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Жидкости в наличии</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            -webkit-tap-highlight-color: transparent;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: #0f0c1f;
+            min-height: 100vh;
+            padding: 12px;
+            position: relative;
+            overflow-x: hidden;
+        }
+        
+        body.modal-open {
+            overflow: hidden;
+            position: fixed;
+            width: 100%;
+            height: 100%;
+        }
+        
+        /* Анимированный фон */
+        body::before {
+            content: '';
+            position: fixed;
+            width: 200%;
+            height: 200%;
+            background: radial-gradient(circle, rgba(76, 40, 140, 0.4) 0%, rgba(15, 12, 31, 1) 70%);
+            animation: rotate 30s linear infinite;
+            z-index: -1;
+            top: -50%;
+            left: -50%;
+        }
+        
+        @keyframes rotate {
+            from { transform: rotate(0deg); }
+            to { transform: rotate(360deg); }
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: rgba(255, 255, 255, 0.08);
+            backdrop-filter: blur(15px);
+            -webkit-backdrop-filter: blur(15px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 30px;
+            padding: 25px 18px;
+            box-shadow: 0 30px 60px rgba(0, 0, 0, 0.5);
+            position: relative;
+            z-index: 1;
+            animation: fadeInUp 0.8s ease;
+        }
+        
+        @keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translateY(30px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+        
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 25px;
+            flex-wrap: wrap;
+            gap: 12px;
+        }
+        
+        h1 {
+            color: transparent;
+            background: linear-gradient(135deg, #ffd700, #ff8c00, #ff6b6b);
+            background-clip: text;
+            -webkit-background-clip: text;
+            font-size: 1.8em;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            font-weight: 900;
+        }
+        
+        .back-button {
+            padding: 10px 20px;
+            background: rgba(255, 255, 255, 0.03);
+            color: white;
+            text-decoration: none;
+            border-radius: 40px;
+            transition: all 0.3s ease;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            font-size: 0.9em;
+            white-space: nowrap;
+        }
+        
+        .back-button:active {
+            background: rgba(255, 255, 255, 0.1);
+            transform: scale(0.95);
+        }
+        
+        /* Сетка товаров - компактная, по 2 в ряд */
+        .products-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 12px;
+            margin-bottom: 20px;
+        }
+        
+        /* Карточка товара */
+        .product-card {
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 20px;
+            padding: 12px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            transition: all 0.2s ease;
+            display: flex;
+            flex-direction: column;
+        }
+        
+        .product-card:active {
+            transform: scale(0.97);
+            border-color: rgba(255, 215, 0, 0.3);
+        }
+        
+        /* Фото товара */
+        .product-image {
+            width: 100%;
+            aspect-ratio: 1/1;
+            background: rgba(255, 255, 255, 0.03);
+            border-radius: 15px;
+            margin-bottom: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            overflow: hidden;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            font-size: 2.5em;
+        }
+        
+        .product-image img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+        
+        /* Название товара */
+        .product-title {
+            color: white;
+            font-size: 1em;
+            font-weight: 600;
+            margin-bottom: 5px;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+        
+        /* Цена (белорусские рубли) */
+        .product-price {
+            color: #ffd700;
+            font-size: 1.2em;
+            font-weight: bold;
+            margin-bottom: 10px;
+        }
+        .product-price::after {
+            content: ' Br';
+            font-size: 0.9em;
+        }
+        
+        /* Кнопка заказа */
+        .order-btn {
+            width: 100%;
+            padding: 10px;
+            background: linear-gradient(135deg, rgba(255, 215, 0, 0.15), rgba(255, 140, 0, 0.15));
+            color: white;
+            border: 1px solid rgba(255, 215, 0, 0.2);
+            border-radius: 20px;
+            font-size: 0.9em;
+            font-weight: 600;
+            cursor: pointer;
+            margin-top: auto;
+        }
+        
+        .order-btn:active {
+            background: linear-gradient(135deg, #ffd700, #ff8c00);
+            transform: scale(0.96);
+        }
+        
+        /* МОДАЛЬНОЕ ОКНО ЗАКАЗА */
+        .order-modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: #0f0c1f;
+            z-index: 10000;
+            overflow-y: auto;
+            -webkit-overflow-scrolling: touch;
+        }
+        
+        .order-modal.active {
+            display: block;
+        }
+        
+        .order-modal-content {
+            min-height: 100%;
+            background: rgba(20, 15, 35, 0.98);
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+            padding: 20px 16px 30px;
+            position: relative;
+        }
+        
+        .order-modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 25px;
+            padding-bottom: 15px;
+            border-bottom: 1px solid rgba(255, 215, 0, 0.2);
+            position: sticky;
+            top: 0;
+            background: rgba(20, 15, 35, 0.98);
+            z-index: 10;
+            padding-top: 10px;
+        }
+        
+        .order-modal-header h2 {
+            color: transparent;
+            background: linear-gradient(135deg, #ffd700, #ff8c00);
+            background-clip: text;
+            -webkit-background-clip: text;
+            font-size: 1.6em;
+            font-weight: 800;
+        }
+        
+        .close-modal {
+            color: rgba(255, 255, 255, 0.7);
+            font-size: 2.2em;
+            line-height: 0.8;
+            cursor: pointer;
+            padding: 5px 15px;
+            margin-right: -10px;
+        }
+        
+        .close-modal:active {
+            color: #ff6b6b;
+            transform: scale(1.1);
+        }
+        
+        /* Детальное фото */
+        .detail-image {
+            width: 100%;
+            aspect-ratio: 1/1;
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 25px;
+            margin-bottom: 20px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            overflow: hidden;
+            border: 2px solid rgba(255, 215, 0, 0.2);
+            font-size: 4em;
+        }
+        
+        .detail-image img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+        
+        /* Название в деталях */
+        .detail-title {
+            color: white;
+            font-size: 1.8em;
+            font-weight: 700;
+            margin-bottom: 20px;
+            text-align: center;
+        }
+        
+        /* Список вкусов с крепостью */
+        .flavors-section {
+            margin-bottom: 25px;
+        }
+        
+        .flavors-title {
+            color: rgba(255, 255, 255, 0.7);
+            font-size: 1.1em;
+            margin-bottom: 15px;
+            text-align: center;
+        }
+        
+        .flavors-list {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+        
+        .flavor-item {
+            background: rgba(255, 255, 255, 0.05);
+            border: 2px solid rgba(255, 255, 255, 0.1);
+            border-radius: 20px;
+            padding: 15px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+        
+        .flavor-item.selected {
+            border-color: #ffd700;
+            background: rgba(255, 215, 0, 0.1);
+            transform: scale(1.02);
+        }
+        
+        .flavor-item:active {
+            transform: scale(0.98);
+        }
+        
+        .flavor-info {
+            display: flex;
+            flex-direction: column;
+            flex: 1;
+        }
+        
+        .flavor-name {
+            color: white;
+            font-size: 1.1em;
+            font-weight: 500;
+        }
+        
+        /* Стиль для отображения крепости */
+        .flavor-strength {
+            display: inline-block;
+            margin-top: 4px;
+            padding: 4px 10px;
+            background: linear-gradient(135deg, rgba(0, 100, 255, 0.2), rgba(0, 200, 255, 0.2));
+            border: 1px solid rgba(0, 200, 255, 0.3);
+            border-radius: 20px;
+            color: #4aa3ff;
+            font-size: 0.8em;
+            font-weight: 600;
+            align-self: flex-start;
+            box-shadow: 0 0 10px rgba(0, 200, 255, 0.3);
+        }
+        
+        .flavor-check {
+            width: 24px;
+            height: 24px;
+            border-radius: 50%;
+            border: 2px solid rgba(255, 255, 255, 0.3);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: transparent;
+            margin-left: 10px;
+        }
+        
+        .flavor-item.selected .flavor-check {
+            background: #ffd700;
+            border-color: #ffd700;
+            color: #0f0c1f;
+        }
+        
+        /* Блок выбора количества */
+        .quantity-selector {
+            margin: 20px 0;
+            text-align: center;
+            animation: fadeIn 0.3s ease;
+        }
+        
+        .quantity-controls {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 15px;
+            margin-top: 10px;
+        }
+        
+        .quantity-btn {
+            width: 44px;
+            height: 44px;
+            border-radius: 50%;
+            border: 2px solid rgba(255, 215, 0, 0.3);
+            background: rgba(255, 215, 0, 0.1);
+            color: #ffd700;
+            font-size: 1.5em;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.2s ease;
+        }
+        
+        .quantity-btn:active {
+            background: #ffd700;
+            color: #0f0c1f;
+            transform: scale(0.9);
+        }
+        
+        .quantity-input {
+            width: 100px;
+            padding: 12px;
+            text-align: center;
+            background: rgba(255, 255, 255, 0.05);
+            border: 2px solid rgba(255, 215, 0, 0.3);
+            border-radius: 20px;
+            color: white;
+            font-size: 1.2em;
+            font-weight: bold;
+        }
+        
+        .quantity-input:focus {
+            outline: none;
+            border-color: #ffd700;
+            background: rgba(255, 255, 255, 0.08);
+        }
+        
+        /* Цена в деталях */
+        .detail-price {
+            color: #ffd700;
+            font-size: 2.2em;
+            font-weight: bold;
+            text-align: center;
+            margin: 25px 0;
+            padding: 15px 0;
+            border-top: 1px solid rgba(255, 255, 255, 0.1);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        .detail-price::after {
+            content: ' Br';
+            font-size: 0.8em;
+        }
+        
+        /* Кнопка подтверждения */
+        .confirm-order-btn {
+            width: 100%;
+            padding: 18px;
+            background: linear-gradient(135deg, #ffd700, #ff8c00);
+            color: white;
+            border: none;
+            border-radius: 40px;
+            font-size: 1.2em;
+            font-weight: bold;
+            cursor: pointer;
+            box-shadow: 0 10px 25px rgba(255, 215, 0, 0.3);
+            margin-top: 20px;
+        }
+        
+        .confirm-order-btn:active {
+            transform: scale(0.96);
+            opacity: 0.9;
+        }
+        
+        .confirm-order-btn:disabled {
+            opacity: 0.5;
+            transform: none;
+            box-shadow: none;
+            cursor: not-allowed;
+        }
+        
+        /* Кнопка возврата */
+        .back-from-order-btn {
+            padding: 15px 25px;
+            background: rgba(255, 255, 255, 0.05);
+            color: white;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: 40px;
+            font-size: 1.1em;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            width: 100%;
+            max-width: 300px;
+            margin: 20px auto 0;
+            display: block;
+        }
+        
+        .back-from-order-btn:active {
+            background: rgba(255, 255, 255, 0.1);
+            border-color: #ffd700;
+            transform: scale(0.96);
+        }
+        
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(-10px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+        
+        /* Пустое состояние */
+        .empty-state {
+            text-align: center;
+            padding: 40px 20px;
+            color: rgba(255, 255, 255, 0.5);
+            grid-column: 1 / -1;
+        }
+        
+        .empty-state div {
+            font-size: 3em;
+            margin-bottom: 10px;
+        }
+        
+        /* Частицы фона */
+        .particle {
+            position: fixed;
+            width: 4px;
+            height: 4px;
+            background: white;
+            border-radius: 50%;
+            opacity: 0.2;
+            animation: float 6s infinite;
+            z-index: 0;
+            pointer-events: none;
+        }
+        
+        @keyframes float {
+            0%, 100% { transform: translateY(0) translateX(0); }
+            50% { transform: translateY(-30px) translateX(20px); }
+        }
+        
+        @media (max-width: 380px) {
+            .products-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="particle" style="top: 20%; left: 10%;"></div>
+    <div class="particle" style="top: 70%; left: 80%; animation-delay: 1s;"></div>
+    <div class="particle" style="top: 40%; left: 90%; animation-delay: 2s;"></div>
+
+    <div class="container">
+        <div class="header">
+            <h1>💧 Жидкости в наличии</h1>
+            <a href="index.html" class="back-button">← На главную</a>
+        </div>
+
+        <div id="productsContainer" class="products-grid">
+            <!-- Товары загружаются сюда -->
+        </div>
+    </div>
+
+    <!-- МОДАЛЬНОЕ ОКНО ЗАКАЗА -->
+    <div id="orderModal" class="order-modal">
+        <div class="order-modal-content">
+            <div class="order-modal-header">
+                <h2>📦 Выбор товара</h2>
+                <span class="close-modal" onclick="closeOrderModal()">✕</span>
+            </div>
+            <div id="orderDetailContainer"></div>
+            
+            <!-- Кнопка возврата -->
+            <button class="back-from-order-btn" onclick="closeOrderModal()">← Вернуться к выбору</button>
+        </div>
+    </div>
+
+    <script src="cart.js"></script>
+    <script>
+        // КЛЮЧ ХРАНИЛИЩА ДЛЯ ЖИДКОСТЕЙ
+        const STORAGE_KEY = 'zhidkostiData';
+        
+        let currentProduct = null;
+        let selectedFlavor = null;
+        let selectedQuantity = 1;
+
+        // Загрузка товаров
+        function loadProducts() {
+            const data = JSON.parse(localStorage.getItem(STORAGE_KEY)) || [];
+            const container = document.getElementById('productsContainer');
+
+            if (data.length === 0) {
+                container.innerHTML = `<div class="empty-state"><div>😢</div><p>Пока нет товаров</p></div>`;
+                return;
+            }
+
+            container.innerHTML = data.map((product, index) => {
+                const hasAvailable = product.flavors.some(f => f.inStock);
+                if (!hasAvailable) return '';
+
+                return `
+                    <div class="product-card">
+                        <div class="product-image">
+                            ${product.image ? `<img src="${product.image}" alt="${product.name}">` : '💧'}
+                        </div>
+                        <div class="product-title">${product.name}</div>
+                        <div class="product-price">${product.price}</div>
+                        <button class="order-btn" onclick="openOrderModal(${index})">Заказать</button>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        // Открыть окно заказа
+        function openOrderModal(index) {
+            const data = JSON.parse(localStorage.getItem(STORAGE_KEY)) || [];
+            currentProduct = data[index];
+            selectedFlavor = null;
+            selectedQuantity = 1;
+
+            const availableFlavors = currentProduct.flavors.filter(f => f.inStock);
+
+            const detailHTML = `
+                <div class="detail-image">
+                    ${currentProduct.image ? `<img src="${currentProduct.image}" alt="${currentProduct.name}">` : '💧'}
+                </div>
+                <div class="detail-title">${currentProduct.name}</div>
+                <div class="flavors-section">
+                    <div class="flavors-title">Выберите вкус и крепость:</div>
+                    <div class="flavors-list" id="flavorsListModal">
+                        ${availableFlavors.map((flavor, idx) => `
+                            <div class="flavor-item" onclick="selectFlavor(${idx})">
+                                <div class="flavor-info">
+                                    <span class="flavor-name">${flavor.name}</span>
+                                    ${flavor.strength ? `<span class="flavor-strength">${flavor.strength} mg</span>` : ''}
+                                </div>
+                                <span class="flavor-check" id="flavorCheck-${idx}">✓</span>
+                            </div>
+                        `).join('')}
+                    </div>
+                </div>
+                
+                <!-- Блок выбора количества (скрыт по умолчанию) -->
+                <div class="quantity-selector" id="quantitySelector" style="display: none;">
+                    <div class="flavors-title">Количество:</div>
+                    <div class="quantity-controls">
+                        <button class="quantity-btn" onclick="changeQuantity(-1)">−</button>
+                        <input type="text" id="quantityInput" class="quantity-input" value="1" inputmode="numeric">
+                        <button class="quantity-btn" onclick="changeQuantity(1)">+</button>
+                    </div>
+                </div>
+                
+                <div class="detail-price" id="detailPrice">${currentProduct.price} Br</div>
+                <button class="confirm-order-btn" id="confirmOrderBtn" onclick="confirmOrder()" disabled>Сначала выберите вкус</button>
+            `;
+
+            document.getElementById('orderDetailContainer').innerHTML = detailHTML;
+            document.getElementById('orderModal').classList.add('active');
+            document.body.classList.add('modal-open');
+            
+            // Добавляем обработчики для ручного ввода количества
+            setTimeout(() => {
+                const quantityInput = document.getElementById('quantityInput');
+                if (quantityInput) {
+                    // Обработка изменения
+                    quantityInput.addEventListener('change', function() {
+                        let val = parseInt(this.value);
+                        if (isNaN(val) || val < 1) val = 1;
+                        this.value = val;
+                        selectedQuantity = val;
+                    });
+                    
+                    // Обработка ввода с клавиатуры (только цифры)
+                    quantityInput.addEventListener('input', function() {
+                        this.value = this.value.replace(/[^0-9]/g, '');
+                    });
+                    
+                    // Обработка нажатия Enter
+                    quantityInput.addEventListener('keypress', function(e) {
+                        if (e.key === 'Enter') {
+                            e.preventDefault();
+                            let val = parseInt(this.value);
+                            if (isNaN(val) || val < 1) val = 1;
+                            this.value = val;
+                            selectedQuantity = val;
+                            this.blur();
+                        }
+                    });
+                    
+                    // Обработка потери фокуса
+                    quantityInput.addEventListener('blur', function() {
+                        let val = parseInt(this.value);
+                        if (isNaN(val) || val < 1) this.value = 1;
+                        selectedQuantity = parseInt(this.value);
+                    });
+                }
+            }, 100);
+        }
+
+        // Функция изменения количества
+        function changeQuantity(delta) {
+            const input = document.getElementById('quantityInput');
+            if (input) {
+                let newVal = parseInt(input.value) + delta;
+                if (newVal < 1) newVal = 1;
+                input.value = newVal;
+                selectedQuantity = newVal;
+            }
+        }
+
+        // Выбор варианта
+        function selectFlavor(index) {
+            selectedFlavor = index;
+
+            document.querySelectorAll('.flavor-item').forEach(item => {
+                item.classList.remove('selected');
+            });
+
+            event.currentTarget.classList.add('selected');
+
+            // Показываем блок выбора количества
+            document.getElementById('quantitySelector').style.display = 'block';
+            
+            const btn = document.getElementById('confirmOrderBtn');
+            btn.disabled = false;
+            btn.textContent = '✅ Добавить в корзину';
+        }
+
+        // Подтверждение заказа (добавление в корзину)
+        function confirmOrder() {
+            if (selectedFlavor === null) {
+                alert('Пожалуйста, выберите вкус');
+                return;
+            }
+
+            const flavor = currentProduct.flavors.filter(f => f.inStock)[selectedFlavor];
+            
+            // Добавляем в корзину с указанным количеством
+            addToCart(currentProduct, flavor, 'zhidkosti', selectedQuantity);
+            
+            // Показываем уведомление
+            showNotification(`✅ ${selectedQuantity} шт. добавлено в корзину`);
+            
+            // Сбрасываем выделение
+            document.querySelectorAll('.flavor-item').forEach(item => {
+                item.classList.remove('selected');
+            });
+            
+            // Скрываем блок выбора количества
+            document.getElementById('quantitySelector').style.display = 'none';
+            
+            // Сбрасываем количество
+            selectedQuantity = 1;
+            const quantityInput = document.getElementById('quantityInput');
+            if (quantityInput) quantityInput.value = '1';
+            
+            // Деактивируем кнопку
+            const btn = document.getElementById('confirmOrderBtn');
+            btn.disabled = true;
+            btn.textContent = 'Сначала выберите вкус';
+            
+            // Сбрасываем выбранный вкус
+            selectedFlavor = null;
+        }
+
+        // Закрыть окно
+        function closeOrderModal() {
+            document.getElementById('orderModal').classList.remove('active');
+            document.body.classList.remove('modal-open');
+            currentProduct = null;
+            selectedFlavor = null;
+        }
+
+        // Загрузка при старте
+        loadProducts();
+    </script>
+</body>
+</html>

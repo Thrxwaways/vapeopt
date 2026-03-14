@@ -1,0 +1,1057 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Управление заказами</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: #0f0c1f;
+            min-height: 100vh;
+            padding: 12px;
+            position: relative;
+            overflow-x: hidden;
+        }
+
+        body.modal-open {
+            overflow: hidden;
+            position: fixed;
+            width: 100%;
+            height: 100%;
+        }
+
+        body::before {
+            content: '';
+            position: fixed;
+            width: 200%;
+            height: 200%;
+            background: radial-gradient(circle, rgba(76, 40, 140, 0.4) 0%, rgba(15, 12, 31, 1) 70%);
+            animation: rotate 30s linear infinite;
+            z-index: -1;
+            top: -50%;
+            left: -50%;
+        }
+
+        @keyframes rotate {
+            from { transform: rotate(0deg); }
+            to { transform: rotate(360deg); }
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: rgba(255, 255, 255, 0.08);
+            backdrop-filter: blur(15px);
+            -webkit-backdrop-filter: blur(15px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 30px;
+            padding: 25px 18px;
+            box-shadow: 0 30px 60px rgba(0, 0, 0, 0.5);
+            position: relative;
+            z-index: 1;
+            animation: fadeInUp 0.8s ease;
+        }
+
+        @keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translateY(30px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 25px;
+            flex-wrap: wrap;
+            gap: 12px;
+        }
+
+        h1 {
+            color: transparent;
+            background: linear-gradient(135deg, #ffd700, #ff8c00, #ff6b6b);
+            background-clip: text;
+            -webkit-background-clip: text;
+            font-size: 2em;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            font-weight: 900;
+        }
+
+        .back-button {
+            padding: 10px 20px;
+            background: rgba(255, 255, 255, 0.03);
+            color: white;
+            text-decoration: none;
+            border-radius: 40px;
+            transition: all 0.3s ease;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            font-size: 0.9em;
+            white-space: nowrap;
+        }
+
+        .back-button:active {
+            background: rgba(255, 255, 255, 0.1);
+            transform: scale(0.95);
+        }
+
+        /* Табы для разделов */
+        .tabs-container {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 25px;
+            flex-wrap: wrap;
+        }
+
+        .tab {
+            flex: 1;
+            min-width: 150px;
+            padding: 12px 20px;
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 40px;
+            color: rgba(255, 255, 255, 0.7);
+            font-size: 1em;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-align: center;
+        }
+
+        .tab.active {
+            background: linear-gradient(135deg, #ffd700, #ff8c00);
+            color: white;
+            border-color: transparent;
+            box-shadow: 0 5px 15px rgba(255, 215, 0, 0.3);
+        }
+
+        .tab.active::before {
+            content: '● ';
+            color: white;
+        }
+
+        .tab:first-child.active::before {
+            content: '○ ';
+            opacity: 0.7;
+        }
+
+        .tab:nth-child(2).active::before {
+            content: '✓ ';
+        }
+
+        .tab:last-child.active::before {
+            content: '📦 ';
+        }
+
+        /* Сетка заказов */
+        .orders-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+            gap: 16px;
+            margin-top: 20px;
+        }
+
+        /* Карточка заказа */
+        .order-card {
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 22px;
+            padding: 20px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            cursor: pointer;
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .order-card:hover {
+            transform: translateY(-5px);
+            border-color: #ffd700;
+            box-shadow: 0 10px 30px rgba(255, 215, 0, 0.2);
+        }
+
+        .order-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 4px;
+            height: 100%;
+            background: linear-gradient(135deg, #ffd700, #ff8c00);
+        }
+
+        .order-card.completed::before {
+            background: linear-gradient(135deg, #4ade80, #22c55e);
+        }
+
+        .order-card.archived::before {
+            background: linear-gradient(135deg, #94a3b8, #64748b);
+        }
+
+        .order-card.archived {
+            opacity: 0.6;
+        }
+
+        .order-card.archived:hover {
+            opacity: 0.8;
+        }
+
+        .order-number {
+            color: white;
+            font-size: 1.3em;
+            font-weight: 600;
+            margin-bottom: 10px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .order-date {
+            color: rgba(255, 255, 255, 0.5);
+            font-size: 0.85em;
+            margin-bottom: 15px;
+        }
+
+        .order-telegram {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            background: rgba(255, 255, 255, 0.03);
+            padding: 8px 12px;
+            border-radius: 20px;
+            margin-bottom: 15px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .order-telegram span {
+            color: #4aa3ff;
+            font-weight: 600;
+        }
+
+        .order-items-count {
+            color: rgba(255, 255, 255, 0.7);
+            font-size: 0.9em;
+            margin-bottom: 10px;
+        }
+
+        .order-total {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding-top: 10px;
+            border-top: 1px solid rgba(255, 255, 255, 0.1);
+            color: white;
+        }
+
+        .order-total span:last-child {
+            color: #ffd700;
+            font-size: 1.2em;
+            font-weight: bold;
+        }
+
+        .order-card.completed .order-total span:last-child {
+            color: #4ade80;
+        }
+
+        .order-card.archived .order-total span:last-child {
+            color: #94a3b8;
+        }
+
+        /* Кнопки действий на карточке */
+        .card-actions {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            display: flex;
+            gap: 5px;
+            z-index: 10;
+        }
+
+        .action-btn {
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            color: white;
+            font-size: 1em;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.2s ease;
+        }
+
+        .action-btn:hover {
+            transform: scale(1.1);
+        }
+
+        .complete-btn {
+            border-color: rgba(255, 215, 0, 0.3);
+            color: #ffd700;
+        }
+
+        .complete-btn:hover {
+            background: rgba(255, 215, 0, 0.2);
+        }
+
+        .archive-btn {
+            border-color: rgba(148, 163, 184, 0.3);
+            color: #94a3b8;
+        }
+
+        .archive-btn:hover {
+            background: rgba(148, 163, 184, 0.2);
+        }
+
+        .delete-btn {
+            border-color: rgba(255, 107, 107, 0.3);
+            color: #ff6b6b;
+        }
+
+        .delete-btn:hover {
+            background: rgba(255, 107, 107, 0.2);
+        }
+
+        /* Модальное окно заказа */
+        .order-detail-modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.8);
+            backdrop-filter: blur(10px);
+            z-index: 10000;
+            align-items: center;
+            justify-content: center;
+            padding: 15px;
+        }
+
+        .order-detail-modal.active {
+            display: flex;
+        }
+
+        .order-detail-content {
+            background: rgba(20, 15, 35, 0.98);
+            border: 2px solid rgba(255, 215, 0, 0.2);
+            border-radius: 30px;
+            padding: 25px;
+            max-width: 600px;
+            width: 100%;
+            max-height: 90vh;
+            overflow-y: auto;
+            position: relative;
+            animation: modalSlideUp 0.4s ease;
+        }
+
+        .order-detail-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            padding-bottom: 15px;
+            border-bottom: 1px solid rgba(255, 215, 0, 0.2);
+        }
+
+        .order-detail-header h2 {
+            color: transparent;
+            background: linear-gradient(135deg, #ffd700, #ff8c00);
+            background-clip: text;
+            -webkit-background-clip: text;
+            font-size: 1.8em;
+        }
+
+        .close-order-detail {
+            color: rgba(255, 255, 255, 0.7);
+            font-size: 2em;
+            cursor: pointer;
+            padding: 5px 15px;
+        }
+
+        .close-order-detail:hover {
+            color: #ff6b6b;
+        }
+
+        .order-info {
+            background: rgba(255, 255, 255, 0.03);
+            border-radius: 20px;
+            padding: 15px;
+            margin-bottom: 20px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .order-info-item {
+            display: flex;
+            margin-bottom: 10px;
+        }
+
+        .order-info-label {
+            color: rgba(255, 255, 255, 0.5);
+            width: 120px;
+        }
+
+        .order-info-value {
+            color: white;
+            font-weight: 500;
+        }
+
+        .order-info-value.telegram {
+            color: #4aa3ff;
+        }
+
+        .order-items-list {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+            margin: 20px 0;
+            max-height: 40vh;
+            overflow-y: auto;
+            padding-right: 10px;
+        }
+
+        .order-item {
+            background: rgba(255, 255, 255, 0.03);
+            border-radius: 16px;
+            padding: 12px;
+            display: flex;
+            gap: 12px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .order-item-image {
+            width: 50px;
+            height: 50px;
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.5em;
+        }
+
+        .order-item-details {
+            flex: 1;
+        }
+
+        .order-item-title {
+            color: white;
+            font-weight: 600;
+            font-size: 1em;
+            margin-bottom: 4px;
+        }
+
+        .order-item-flavor {
+            color: rgba(255, 255, 255, 0.7);
+            font-size: 0.85em;
+            margin-bottom: 4px;
+        }
+
+        .order-item-specs {
+            display: flex;
+            gap: 6px;
+            flex-wrap: wrap;
+        }
+
+        .order-item-spec {
+            padding: 2px 8px;
+            border-radius: 12px;
+            font-size: 0.7em;
+            font-weight: 600;
+        }
+
+        .order-item-price-info {
+            display: flex;
+            flex-direction: column;
+            align-items: flex-end;
+            min-width: 80px;
+        }
+
+        .order-item-price {
+            color: #ffd700;
+            font-weight: bold;
+        }
+
+        .order-item-quantity {
+            color: rgba(255, 255, 255, 0.5);
+            font-size: 0.85em;
+        }
+
+        .order-total-detail {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 15px;
+            background: rgba(255, 215, 0, 0.1);
+            border-radius: 16px;
+            margin-top: 20px;
+            font-size: 1.2em;
+            color: white;
+        }
+
+        .order-total-detail span:last-child {
+            color: #ffd700;
+            font-weight: bold;
+        }
+
+        /* Кнопки действий в модальном окне */
+        .modal-actions {
+            display: flex;
+            gap: 10px;
+            margin-top: 20px;
+        }
+
+        .modal-action-btn {
+            flex: 1;
+            padding: 12px;
+            border: none;
+            border-radius: 30px;
+            font-size: 1em;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 5px;
+        }
+
+        .modal-action-btn.complete {
+            background: linear-gradient(135deg, #4ade80, #22c55e);
+            color: white;
+        }
+
+        .modal-action-btn.archive {
+            background: linear-gradient(135deg, #94a3b8, #64748b);
+            color: white;
+        }
+
+        .modal-action-btn.delete {
+            background: linear-gradient(135deg, #ff6b6b, #ef4444);
+            color: white;
+        }
+
+        .modal-action-btn:hover {
+            transform: scale(0.98);
+            opacity: 0.9;
+        }
+
+        .modal-action-btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 60px 20px;
+            color: rgba(255, 255, 255, 0.5);
+            grid-column: 1 / -1;
+        }
+
+        .empty-state div {
+            font-size: 4em;
+            margin-bottom: 15px;
+        }
+
+        .stats-badge {
+            display: inline-block;
+            padding: 3px 8px;
+            background: rgba(255, 215, 0, 0.2);
+            border-radius: 20px;
+            color: #ffd700;
+            margin-left: 5px;
+            font-size: 0.8em;
+        }
+
+        .particle {
+            position: fixed;
+            width: 4px;
+            height: 4px;
+            background: white;
+            border-radius: 50%;
+            opacity: 0.2;
+            animation: float 6s infinite;
+            z-index: 0;
+            pointer-events: none;
+        }
+
+        @keyframes float {
+            0%, 100% { transform: translateY(0) translateX(0); }
+            50% { transform: translateY(-30px) translateX(20px); }
+        }
+
+        @keyframes modalSlideUp {
+            from {
+                opacity: 0;
+                transform: translateY(50px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="particle" style="top: 20%; left: 10%;"></div>
+    <div class="particle" style="top: 70%; left: 80%; animation-delay: 1s;"></div>
+    <div class="particle" style="top: 40%; left: 90%; animation-delay: 2s;"></div>
+
+    <div class="container">
+        <div class="header">
+            <h1>📦 Управление заказами</h1>
+            <a href="admin-panel.html" class="back-button">← Назад</a>
+        </div>
+
+        <!-- Табы для разделов -->
+        <div class="tabs-container">
+            <button class="tab active" onclick="switchTab('pending')" id="pendingTab">⏳ Невыполненные <span id="pendingCount" class="stats-badge">0</span></button>
+            <button class="tab" onclick="switchTab('completed')" id="completedTab">✅ Выполненные <span id="completedCount" class="stats-badge">0</span></button>
+            <button class="tab" onclick="switchTab('archived')" id="archivedTab">📦 Архив <span id="archivedCount" class="stats-badge">0</span></button>
+        </div>
+
+        <!-- Контейнеры для заказов -->
+        <div id="pendingOrders" class="orders-grid"></div>
+        <div id="completedOrders" class="orders-grid" style="display: none;"></div>
+        <div id="archivedOrders" class="orders-grid" style="display: none;"></div>
+    </div>
+
+    <!-- Модальное окно деталей заказа -->
+    <div id="orderDetailModal" class="order-detail-modal">
+        <div class="order-detail-content">
+            <div class="order-detail-header">
+                <h2 id="orderDetailTitle">Заказ №</h2>
+                <span class="close-order-detail" onclick="closeOrderDetail()">✕</span>
+            </div>
+
+            <div id="orderDetailContainer"></div>
+
+            <!-- Кнопки действий в модальном окне -->
+            <div class="modal-actions" id="modalActions"></div>
+        </div>
+    </div>
+
+    <script>
+        // Проверка авторизации
+        if (!sessionStorage.getItem('admin_logged')) {
+            window.location.href = 'admin.html';
+        }
+
+        let currentTab = 'pending';
+        let currentOrderId = null;
+
+        // Функция для перенумерации заказов
+        function renumberOrders(orders) {
+            return orders.map((order, index) => {
+                return {
+                    ...order,
+                    id: index + 1
+                };
+            });
+        }
+
+        // Загрузка заказов
+        function loadOrders() {
+            const orders = JSON.parse(localStorage.getItem('orders')) || [];
+
+            // Разделяем на категории
+            const pendingOrders = orders.filter(order => !order.completed && !order.archived);
+            const completedOrders = orders.filter(order => order.completed && !order.archived);
+            const archivedOrders = orders.filter(order => order.archived);
+
+            // Обновляем счетчики
+            document.getElementById('pendingCount').textContent = pendingOrders.length;
+            document.getElementById('completedCount').textContent = completedOrders.length;
+            document.getElementById('archivedCount').textContent = archivedOrders.length;
+
+            // Очищаем контейнеры
+            document.getElementById('pendingOrders').innerHTML = '';
+            document.getElementById('completedOrders').innerHTML = '';
+            document.getElementById('archivedOrders').innerHTML = '';
+
+            // Отображаем заказы
+            renderOrders(pendingOrders, 'pendingOrders', 'pending');
+            renderOrders(completedOrders, 'completedOrders', 'completed');
+            renderOrders(archivedOrders, 'archivedOrders', 'archived');
+        }
+
+        // Отображение заказов
+        function renderOrders(orders, containerId, status) {
+            const container = document.getElementById(containerId);
+
+            if (orders.length === 0) {
+                let emptyText = '';
+                let emptyIcon = '';
+
+                switch(status) {
+                    case 'pending':
+                        emptyText = 'Нет невыполненных заказов';
+                        emptyIcon = '📭';
+                        break;
+                    case 'completed':
+                        emptyText = 'Нет выполненных заказов';
+                        emptyIcon = '✅';
+                        break;
+                    case 'archived':
+                        emptyText = 'Архив пуст';
+                        emptyIcon = '📦';
+                        break;
+                }
+
+                container.innerHTML = `
+                    <div class="empty-state">
+                        <div>${emptyIcon}</div>
+                        <p>${emptyText}</p>
+                    </div>
+                `;
+                return;
+            }
+
+            // Сортируем от новых к старым
+            const sortedOrders = [...orders].sort((a, b) => b.id - a.id);
+
+            sortedOrders.forEach(order => {
+                const totalItems = order.items.reduce((sum, item) => sum + item.quantity, 0);
+
+                const orderCard = document.createElement('div');
+                orderCard.className = `order-card ${status}`;
+                orderCard.onclick = () => openOrderDetail(order.id);
+
+                orderCard.innerHTML = `
+                    <div class="order-number">
+                        Заказ №${order.id}
+                    </div>
+                    <div class="order-date">${order.date}</div>
+                    <div class="order-telegram">
+                        <span>📱</span>
+                        <span>${order.telegram}</span>
+                    </div>
+                    <div class="order-items-count">Товаров: ${totalItems} шт</div>
+                    <div class="order-total">
+                        <span>Сумма:</span>
+                        <span>${order.total} Br</span>
+                    </div>
+                `;
+
+                container.appendChild(orderCard);
+            });
+        }
+
+        // Переключение между табами
+        function switchTab(tab) {
+            currentTab = tab;
+
+            // Обновляем классы табов
+            document.getElementById('pendingTab').classList.toggle('active', tab === 'pending');
+            document.getElementById('completedTab').classList.toggle('active', tab === 'completed');
+            document.getElementById('archivedTab').classList.toggle('active', tab === 'archived');
+
+            // Показываем нужный контейнер
+            document.getElementById('pendingOrders').style.display = tab === 'pending' ? 'grid' : 'none';
+            document.getElementById('completedOrders').style.display = tab === 'completed' ? 'grid' : 'none';
+            document.getElementById('archivedOrders').style.display = tab === 'archived' ? 'grid' : 'none';
+        }
+
+        // Отметить заказ как выполненный
+        function markOrderAsCompleted(orderId) {
+            const orders = JSON.parse(localStorage.getItem('orders')) || [];
+            const orderIndex = orders.findIndex(o => o.id === orderId);
+
+            if (orderIndex !== -1) {
+                orders[orderIndex].completed = true;
+                orders[orderIndex].archived = false;
+                
+                // Перенумерация не нужна, просто сохраняем
+                localStorage.setItem('orders', JSON.stringify(orders));
+
+                // Перезагружаем отображение
+                loadOrders();
+                
+                // Если открыто модальное окно, обновляем его
+                if (currentOrderId === orderId) {
+                    openOrderDetail(orderId);
+                }
+
+                showNotification('✅ Заказ отмечен как выполненный');
+            }
+        }
+
+        // Переместить в архив
+        function archiveOrder(orderId) {
+            if (confirm('Переместить заказ в архив?')) {
+                const orders = JSON.parse(localStorage.getItem('orders')) || [];
+                const orderIndex = orders.findIndex(o => o.id === orderId);
+
+                if (orderIndex !== -1) {
+                    orders[orderIndex].archived = true;
+                    
+                    // Перенумерация не нужна, просто сохраняем
+                    localStorage.setItem('orders', JSON.stringify(orders));
+
+                    // Перезагружаем отображение
+                    loadOrders();
+
+                    // Если открыто модальное окно, закрываем его
+                    closeOrderDetail();
+
+                    showNotification('📦 Заказ перемещен в архив');
+                }
+            }
+        }
+
+        // Вернуть из архива
+        function unarchiveOrder(orderId) {
+            const orders = JSON.parse(localStorage.getItem('orders')) || [];
+            const orderIndex = orders.findIndex(o => o.id === orderId);
+
+            if (orderIndex !== -1) {
+                orders[orderIndex].archived = false;
+                // Если заказ был в архиве, возвращаем его в выполненые
+                if (orders[orderIndex].completed) {
+                    // Оставляем как выполненный
+                }
+                
+                localStorage.setItem('orders', JSON.stringify(orders));
+
+                // Перезагружаем отображение
+                loadOrders();
+
+                // Если открыто модальное окно, обновляем его
+                if (currentOrderId === orderId) {
+                    openOrderDetail(orderId);
+                }
+
+                showNotification('📦 Заказ возвращен из архива');
+            }
+        }
+
+        // Удалить заказ
+        function deleteOrder(orderId) {
+            if (confirm('Вы уверены, что хотите удалить заказ? Это действие необратимо.')) {
+                let orders = JSON.parse(localStorage.getItem('orders')) || [];
+
+                // Удаляем заказ
+                orders = orders.filter(o => o.id !== orderId);
+
+                // Перенумеровываем заказы (освобождаем номера)
+                orders = renumberOrders(orders);
+
+                localStorage.setItem('orders', JSON.stringify(orders));
+
+                // Перезагружаем отображение
+                loadOrders();
+
+                // Если открыто модальное окно, закрываем его
+                closeOrderDetail();
+
+                showNotification('🗑️ Заказ удален');
+            }
+        }
+
+        // Открыть детали заказа
+        function openOrderDetail(orderId) {
+            const orders = JSON.parse(localStorage.getItem('orders')) || [];
+            const order = orders.find(o => o.id === orderId);
+
+            if (!order) return;
+
+            currentOrderId = orderId;
+
+            document.getElementById('orderDetailTitle').textContent = `Заказ №${order.id}`;
+
+            // Формируем список товаров
+            const itemsHTML = order.items.map(item => {
+                // Формируем строку с характеристиками
+                let specsHTML = '';
+                if (item.specs.strength) {
+                    specsHTML += `<span class="order-item-spec spec-strength">${item.specs.strength} mg</span>`;
+                }
+                if (item.specs.volume) {
+                    specsHTML += `<span class="order-item-spec spec-volume">${item.specs.volume} мл</span>`;
+                }
+                if (item.specs.resistance) {
+                    specsHTML += `<span class="order-item-spec spec-resistance">${item.specs.resistance} Ω</span>`;
+                }
+
+                return `
+                    <div class="order-item">
+                        <div class="order-item-image">${item.image}</div>
+                        <div class="order-item-details">
+                            <div class="order-item-title">${item.productName}</div>
+                            <div class="order-item-flavor">${item.flavorName}</div>
+                            ${specsHTML ? `<div class="order-item-specs">${specsHTML}</div>` : ''}
+                        </div>
+                        <div class="order-item-price-info">
+                            <div class="order-item-price">${item.price} Br</div>
+                            <div class="order-item-quantity">×${item.quantity}</div>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+
+            const detailHTML = `
+                <div class="order-info">
+                    <div class="order-info-item">
+                        <span class="order-info-label">Дата:</span>
+                        <span class="order-info-value">${order.date}</span>
+                    </div>
+                    <div class="order-info-item">
+                        <span class="order-info-label">Telegram:</span>
+                        <span class="order-info-value telegram">${order.telegram}</span>
+                    </div>
+                    <div class="order-info-item">
+                        <span class="order-info-label">Статус:</span>
+                        <span class="order-info-value" style="color: ${order.archived ? '#94a3b8' : (order.completed ? '#4ade80' : '#ffd700')}">
+                            ${order.archived ? '📦 В архиве' : (order.completed ? '✅ Выполнен' : '⏳ В обработке')}
+                        </span>
+                    </div>
+                </div>
+
+                <h3 style="color: white; margin-bottom: 10px;">Состав заказа:</h3>
+                <div class="order-items-list">
+                    ${itemsHTML}
+                </div>
+
+                <div class="order-total-detail">
+                    <span>Итого:</span>
+                    <span>${order.total} Br</span>
+                </div>
+            `;
+
+            document.getElementById('orderDetailContainer').innerHTML = detailHTML;
+
+            // Формируем кнопки действий в модальном окне в зависимости от статуса
+            const modalActions = document.getElementById('modalActions');
+
+            if (order.archived) {
+                // Для архива - кнопка возврата и удаления
+                modalActions.innerHTML = `
+                    <button class="modal-action-btn archive" onclick="unarchiveOrder(${order.id})">📦 Вернуть из архива</button>
+                    <button class="modal-action-btn delete" onclick="deleteOrder(${order.id})">🗑️ Удалить навсегда</button>
+                `;
+            } else if (order.completed) {
+                // Для выполненных - отправить в архив или удалить
+                modalActions.innerHTML = `
+                    <button class="modal-action-btn archive" onclick="archiveOrder(${order.id})">📦 В архив</button>
+                    <button class="modal-action-btn delete" onclick="deleteOrder(${order.id})">🗑️ Удалить</button>
+                `;
+            } else {
+                // Для невыполненных - отметить выполненным
+                modalActions.innerHTML = `
+                    <button class="modal-action-btn complete" onclick="markOrderAsCompleted(${order.id})">✅ Отметить выполненным</button>
+                `;
+            }
+
+            document.getElementById('orderDetailModal').classList.add('active');
+            document.body.classList.add('modal-open');
+        }
+
+        // Закрыть детали заказа
+        function closeOrderDetail() {
+            document.getElementById('orderDetailModal').classList.remove('active');
+            document.body.classList.remove('modal-open');
+            currentOrderId = null;
+        }
+
+        // Показать уведомление
+        function showNotification(message) {
+            const notification = document.createElement('div');
+            notification.style.cssText = `
+                position: fixed;
+                top: 20px;
+                right: 20px;
+                background: linear-gradient(135deg, #4ade80, #22c55e);
+                color: white;
+                padding: 15px 25px;
+                border-radius: 50px;
+                font-weight: 600;
+                z-index: 10001;
+                animation: slideIn 0.3s ease;
+                box-shadow: 0 5px 20px rgba(74, 222, 128, 0.4);
+            `;
+            notification.textContent = message;
+            document.body.appendChild(notification);
+
+            setTimeout(() => {
+                notification.style.animation = 'slideOut 0.3s ease';
+                setTimeout(() => notification.remove(), 300);
+            }, 2000);
+        }
+
+        // Закрыть по клику вне модального окна
+        window.onclick = function(event) {
+            const modal = document.getElementById('orderDetailModal');
+            if (event.target === modal) {
+                closeOrderDetail();
+            }
+        }
+
+        // Добавляем стили для уведомлений
+        const style = document.createElement('style');
+        style.textContent = `
+            @keyframes slideIn {
+                from {
+                    transform: translateX(100%);
+                    opacity: 0;
+                }
+                to {
+                    transform: translateX(0);
+                    opacity: 1;
+                }
+            }
+
+            @keyframes slideOut {
+                from {
+                    transform: translateX(0);
+                    opacity: 1;
+                }
+                to {
+                    transform: translateX(100%);
+                    opacity: 0;
+                }
+            }
+        `;
+        document.head.appendChild(style);
+
+        // Инициализация
+        function init() {
+            // Добавляем поля completed и archived в старые заказы, если их нет
+            const orders = JSON.parse(localStorage.getItem('orders')) || [];
+            let updated = false;
+
+            orders.forEach(order => {
+                if (order.completed === undefined) {
+                    order.completed = false;
+                    updated = true;
+                }
+                if (order.archived === undefined) {
+                    order.archived = false;
+                    updated = true;
+                }
+            });
+
+            if (updated) {
+                localStorage.setItem('orders', JSON.stringify(orders));
+            }
+
+            loadOrders();
+        }
+
+        init();
+    </script>
+</body>
+</html>
